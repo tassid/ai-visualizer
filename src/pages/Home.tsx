@@ -56,7 +56,7 @@ export function Home() {
     <>
       <section className="hero">
         <div>
-          <h1>Machine learning algorithms, one step at a time</h1>
+          <h1>Machine learning algorithms, visualized</h1>
           <p>
             A learning algorithm finds patterns in data instead of following rules written by hand. Each one makes its own assumptions: some draw lines, some bend the plane with layers of neurons, some just remember the examples they have seen.
           </p>
