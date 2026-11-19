@@ -6,19 +6,19 @@ import { runToEnd } from '../../engine/useTrainer';
 import { createMlp, type MlpParams } from './model';
 import { Network } from './network';
 
-const base: MlpParams = { arch: '8-8', act: 'tanh', opt: 'Adam', lr: 0.03, batch: 'completo', epochs: 600 };
+const base: MlpParams = { arch: '8-8', act: 'tanh', opt: 'Adam', lr: 0.03, batch: 'full', epochs: 600 };
 
 describe('MLP', () => {
   beforeEach(() => seed(3));
 
-  it('aprende o XOR (o que o perceptron não consegue)', () => {
+  it('learns XOR (which the perceptron cannot)', () => {
     const data = DATASETS.xor.generate();
     const t = createMlp(data, base);
     runToEnd(t);
     expect(accuracy(data, (x, y) => t.state.net.predict(x, y))).toBeGreaterThan(0.95);
   });
 
-  it('a perda diminui ao longo do treino', () => {
+  it('the loss goes down during training', () => {
     const data = DATASETS.circles.generate();
     const t = createMlp(data, { ...base, epochs: 200 });
     runToEnd(t);
@@ -26,7 +26,7 @@ describe('MLP', () => {
     expect(h[h.length - 1]).toBeLessThan(h[0] / 2);
   });
 
-  it('o gradiente da retropropagação bate com a diferença finita', () => {
+  it('the backpropagation gradient matches the finite difference', () => {
     const net = new Network([2, 3, 1], 'tanh');
     const grad = net.zerosLike();
     const [x, y, target] = [0.3, -0.6, 1];
@@ -44,7 +44,7 @@ describe('MLP', () => {
     expect(grad.W[0][1][0]).toBeCloseTo((up - down) / (2 * h), 5);
   });
 
-  it.each(['SGD', 'Momentum', 'Adam'] as const)('otimizador %s reduz a perda', (opt) => {
+  it.each(['SGD', 'Momentum', 'Adam'] as const)('optimizer %s lowers the loss', (opt) => {
     const data = DATASETS.blobs.generate();
     const t = createMlp(data, { ...base, opt, lr: opt === 'SGD' ? 0.3 : 0.03, epochs: 150 });
     runToEnd(t);

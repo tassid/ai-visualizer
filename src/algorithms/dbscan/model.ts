@@ -1,15 +1,15 @@
 /**
  * DBSCAN: Density-Based Spatial Clustering of Applications with Noise (Ester et al., 1996).
  *
- * Definições:
- *   vizinhança-ε de p: pontos a distância ≤ ε de p (inclui o próprio p)
- *   núcleo:  |vizinhança| ≥ minPts
- *   borda:   não é núcleo, mas está na vizinhança de um núcleo
- *   ruído:   nem núcleo nem borda
+ * Definitions:
+ *   ε-neighborhood of p: the points within distance ε of p (p included)
+ *   core:   |neighborhood| ≥ minPts
+ *   border: not core, but inside the neighborhood of a core point
+ *   noise:  neither core nor border
  *
- * Um grupo é o conjunto de pontos alcançáveis por densidade a partir de um
- * núcleo. A expansão funciona como uma busca em largura (BFS) por um grafo
- * em que núcleos se conectam aos seus vizinhos.
+ * A cluster is the set of points density-reachable from a core point. The
+ * expansion is a breadth-first search over a graph in which core points
+ * connect to their neighbors.
  */
 import { sqDist } from '../../core/math';
 import { range, shuffle } from '../../core/random';
@@ -24,7 +24,7 @@ export const NOISE = -1;
 export const UNSEEN = -2;
 
 export interface DbscanState {
-  /** Grupo de cada ponto: UNSEEN, NOISE ou 0, 1, 2... */
+  /** Cluster of each point: UNSEEN, NOISE or 0, 1, 2... */
   label: Int32Array;
   core: Uint8Array;
   visited: Uint8Array;
@@ -33,10 +33,14 @@ export interface DbscanState {
   current: number;
 }
 
-/** Vizinhança-ε por força bruta, O(n). Com uma KD tree ou grade espacial, cairia para ~O(log n). */
+/** Brute-force ε-neighborhood, O(n). A k-d tree or a spatial grid would bring it near O(log n). */
 export function region(data: Point[], i: number, eps: number): number[] {
-  const p = data[i], out: number[] = [], e2 = eps * eps;
-  for (let j = 0; j < data.length; j++) if (sqDist(p.x, p.y, data[j].x, data[j].y) <= e2) out.push(j);
+  return regionAt(data, data[i].x, data[i].y, eps);
+}
+
+export function regionAt(data: Point[], x: number, y: number, eps: number): number[] {
+  const out: number[] = [], e2 = eps * eps;
+  for (let j = 0; j < data.length; j++) if (sqDist(x, y, data[j].x, data[j].y) <= e2) out.push(j);
   return out;
 }
 
@@ -44,48 +48,48 @@ export function* train(data: Point[], P: DbscanParams, s: DbscanState): Generato
   const inQueue = new Uint8Array(data.length);
   const unlabeled = (j: number) => s.label[j] === UNSEEN || s.label[j] === NOISE;
 
-  for (const p of shuffle(range(data.length))) {                        // linha 1
+  for (const p of shuffle(range(data.length))) {                        // line 1
     if (s.visited[p]) continue;
-    s.visited[p] = 1;                                                   // linha 2
+    s.visited[p] = 1;                                                   // line 2
     s.current = p;
-    const N = region(data, p, P.eps);                                   // linha 3
-    if (N.length < P.minPts) {                                          // linha 4
+    const N = region(data, p, P.eps);                                   // line 3
+    if (N.length < P.minPts) {                                          // line 4
       s.label[p] = NOISE;
-      yield { line: 4, message: `Ponto com só ${N.length} vizinho(s) no raio ε (< ${P.minPts}): marcado como ruído, por enquanto.` };
+      yield { line: 4, message: `Only ${N.length} neighbor(s) within ε (fewer than ${P.minPts}): noise, for now.` };
       continue;
     }
-    const C = s.clusters++;                                             // linha 6
+    const C = s.clusters++;                                             // line 6
     s.label[p] = C;
     s.core[p] = 1;
     for (const j of N) if (j !== p && unlabeled(j) && !inQueue[j]) { s.queue.push(j); inQueue[j] = 1; }
-    yield { line: 6, message: `Núcleo com ${N.length} vizinhos: começa o grupo ${C + 1} e ${s.queue.length} vizinhos entram na fila.` };
+    yield { line: 6, message: `A core point with ${N.length} neighbors starts cluster ${C + 1}; ${s.queue.length} neighbors join the queue.` };
 
-    while (s.queue.length) {                                            // linha 7
+    while (s.queue.length) {                                            // line 7
       const q = s.queue.shift()!;
       s.current = q;
       let promoted = false;
-      if (!s.visited[q]) {                                              // linha 8
+      if (!s.visited[q]) {                                              // line 8
         s.visited[q] = 1;
-        const Nq = region(data, q, P.eps);                              // linha 9
-        if (Nq.length >= P.minPts) {                                    // linha 10
+        const Nq = region(data, q, P.eps);                              // line 9
+        if (Nq.length >= P.minPts) {                                    // line 10
           s.core[q] = 1;
           promoted = true;
           for (const j of Nq) if (unlabeled(j) && !inQueue[j]) { s.queue.push(j); inQueue[j] = 1; }
         }
       }
       const wasNoise = s.label[q] === NOISE;
-      if (unlabeled(q)) s.label[q] = C;                                 // linha 11
+      if (unlabeled(q)) s.label[q] = C;                                 // line 11
       yield {
         line: promoted ? 10 : 11,
         message: promoted
-          ? `Vizinho também é núcleo: o grupo ${C + 1} se expande (fila: ${s.queue.length}).`
-          : `Vizinho de borda entra no grupo ${C + 1}${wasNoise ? ' (era ruído e foi resgatado)' : ''}.`,
+          ? `This neighbor is also a core point, so cluster ${C + 1} keeps growing (queue: ${s.queue.length}).`
+          : `A border point joins cluster ${C + 1}${wasNoise ? ' (it had been marked as noise)' : ''}.`,
       };
     }
   }
   s.current = -1;
   const noise = s.label.reduce((a, l) => a + (l === NOISE ? 1 : 0), 0);
-  return { line: 1, message: `Fim: ${s.clusters} grupo(s) e ${noise} ponto(s) de ruído.` };
+  return { line: 1, message: `Done: ${s.clusters} cluster(s) and ${noise} noise point(s).` };
 }
 
 export function createDbscan(data: Point[], P: DbscanParams): Trainer<DbscanState> {

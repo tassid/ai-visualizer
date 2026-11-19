@@ -1,10 +1,10 @@
 /**
- * Fundo de decisão desenhado em canvas.
+ * Decision background drawn on a canvas.
  *
- * O canvas tem baixa resolução (ex.: 72 x 72 pixels) e é esticado pelo CSS.
- * O navegador faz interpolação bilinear ao ampliar, o que produz um gradiente
- * suave de graça e mantém o custo baixo: 72² = 5.184 avaliações do modelo por
- * quadro, em vez de 560² = 313.600.
+ * The canvas is low resolution (e.g. 72 x 72 pixels) and stretched by CSS.
+ * The browser interpolates while scaling up, which gives a smooth gradient
+ * for free and keeps the cost low: 72² = 5,184 model evaluations per frame
+ * instead of 560² = 313,600.
  */
 import { useEffect, useRef } from 'react';
 import { hexToRgb, COLORS, type RGBA } from '../../core/colors';
@@ -30,12 +30,12 @@ export function Heatmap({ color, version, resolution = 72 }: Props) {
     const img = ctx.createImageData(R, R);
     for (let j = 0; j < R; j++) {
       for (let i = 0; i < R; i++) {
-        // centro do pixel (i, j) em coordenadas do mundo
+        // center of pixel (i, j) in world coordinates
         const wx = -1 + ((i + 0.5) / R) * 2;
         const wy = 1 - ((j + 0.5) / R) * 2;
         const [r, g, b, a] = color(wx, wy);
         const k = (j * R + i) * 4;
-        // mistura manual com a cor de fundo (alpha compositing)
+        // manual alpha compositing over the background
         img.data[k] = BG[0] * (1 - a) + r * a;
         img.data[k + 1] = BG[1] * (1 - a) + g * a;
         img.data[k + 2] = BG[2] * (1 - a) + b * a;

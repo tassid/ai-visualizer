@@ -1,25 +1,25 @@
 /**
- * Otimizadores: como transformar o gradiente em uma atualização dos pesos.
+ * Optimizers: how a gradient becomes a weight update.
  *
  * SGD:       θ ← θ - η·g
- * Momentum:  v ← β·v + g ;  θ ← θ - η·v        (acumula "inércia")
- * Adam:      m ← β1·m + (1-β1)·g                (média do gradiente)
- *            v ← β2·v + (1-β2)·g²               (média do gradiente ao quadrado)
- *            θ ← θ - η · m̂ / (sqrt(v̂) + ε)      (m̂, v̂ corrigidos pelo viés inicial)
+ * Momentum:  v ← β·v + g ;  θ ← θ - η·v        (builds up velocity)
+ * Adam:      m ← β1·m + (1-β1)·g                (running mean of the gradient)
+ *            v ← β2·v + (1-β2)·g²               (running mean of its square)
+ *            θ ← θ - η · m̂ / (sqrt(v̂) + ε)      (m̂, v̂ corrected for starting at zero)
  *
- * Adam dá a cada peso uma taxa de aprendizado própria, por isso costuma
- * convergir rápido sem ajuste fino.
+ * Adam gives every weight its own step size, which is why it usually
+ * converges without much tuning.
  */
 import type { Layers, Network } from './network';
 
 export type OptimizerName = 'Adam' | 'Momentum' | 'SGD';
 
 export interface Optimizer {
-  /** `grad` já deve estar dividido pelo tamanho do lote. */
+  /** `grad` must already be divided by the batch size. */
   step(net: Network, grad: Layers): void;
 }
 
-/** Aplica `fn` a cada vetor de parâmetros, junto com os vetores correspondentes dos outros buffers. */
+/** Calls `fn` on every parameter vector together with the matching vectors of the other buffers. */
 function forEachVector(net: Network, buffers: Layers[], fn: (p: Float64Array, ...rest: Float64Array[]) => void) {
   const { W, B } = net.params;
   for (let l = 0; l < W.length; l++) {
@@ -60,7 +60,7 @@ export function createOptimizer(name: OptimizerName, net: Network, lr: number): 
   return {
     step(n, grad) {
       t++;
-      const c1 = 1 - b1 ** t, c2 = 1 - b2 ** t; // correção de viés: m e v começam em zero
+      const c1 = 1 - b1 ** t, c2 = 1 - b2 ** t; // bias correction: m and v start at zero
       forEachVector(n, [grad, m, v], (p, g, mm, vv) => {
         for (let k = 0; k < p.length; k++) {
           mm[k] = b1 * mm[k] + (1 - b1) * g[k];

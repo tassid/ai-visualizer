@@ -1,15 +1,14 @@
 import { motion } from 'framer-motion';
 import { binaryColor, classColor, COLORS } from '../../core/colors';
-import { accuracy, fmt, pct } from '../../core/math';
+import { accuracy, fmt, pct, tex } from '../../core/math';
 import type { AlgorithmDef, VisualProps } from '../../core/types';
 import { Plot, usePlot } from '../../components/plot/Plot';
-import { Points, Ring, SPRING } from '../../components/plot/marks';
-import { createNaiveBayes, posterior, variance, type ClassStats, type NaiveBayesParams, type NaiveBayesState } from './model';
+import { Points, Ring, SMOOTH } from '../../components/plot/marks';
+import { createNaiveBayes, joint, posterior, variance, type ClassStats, type NaiveBayesParams, type NaiveBayesState } from './model';
 
 /**
- * Elipses de 1σ e 2σ de cada classe. Como os atributos são independentes
- * (hipótese ingênua), as elipses ficam sempre alinhadas aos eixos.
- * O Framer Motion anima centro e raios conforme as estatísticas mudam.
+ * 1σ and 2σ ellipses of each class. Because features are assumed independent,
+ * the ellipses are always aligned with the axes.
  */
 function ClassEllipses({ st, c, smoothing }: { st: ClassStats; c: number; smoothing: number }) {
   const { x, y, size } = usePlot();
@@ -23,76 +22,80 @@ function ClassEllipses({ st, c, smoothing }: { st: ClassStats; c: number; smooth
           key={m}
           initial={false}
           animate={{ cx: x(st.mean[0]), cy: y(st.mean[1]), rx: m * sx * k, ry: m * sy * k }}
-          transition={SPRING}
+          transition={SMOOTH}
           fill="none"
           stroke={classColor(c)}
-          strokeWidth={m === 1 ? 2.2 : 1.2}
+          strokeWidth={m === 1 ? 2 : 1}
           strokeDasharray={m === 2 ? '5 5' : undefined}
         />
       ))}
-      <motion.circle initial={false} animate={{ cx: x(st.mean[0]), cy: y(st.mean[1]) }} transition={SPRING} r={6} fill={classColor(c)} stroke="#fff" strokeWidth={2} />
+      <motion.circle initial={false} animate={{ cx: x(st.mean[0]), cy: y(st.mean[1]) }} transition={SMOOTH} r={5} fill={classColor(c)} stroke="#000" strokeWidth={1.5} />
     </g>
   );
 }
 
-function NaiveBayesVisual({ state: s, data, version, compact }: VisualProps<NaiveBayesState>) {
+function NaiveBayesVisual({ state: s, data, version, hover, compact }: VisualProps<NaiveBayesState>) {
   const cur = s.current >= 0 ? data[s.current] : null;
   return (
-    <Plot interactive={false} heatmap={{ version, color: (x, y) => binaryColor(posterior(s, x, y)) }}>
-      <Points data={data} color={(p) => classColor(p.c)} opacity={(_, i) => (s.current === -1 || i === s.current ? 1 : 0.85)} />
+    <Plot heatmap={{ version, color: (x, y) => binaryColor(posterior(s, x, y)) }}>
+      <Points data={data} color={(p) => classColor(p.c)} />
       <ClassEllipses st={s.stats[0]} c={0} smoothing={s.smoothing} />
       <ClassEllipses st={s.stats[1]} c={1} smoothing={s.smoothing} />
-      {!compact && <Ring at={cur} color={COLORS.accent} width={2.5} />}
+      {!compact && <Ring at={hover ?? cur} color={COLORS.yellow} width={2.5} r={hover ? 6 : 11} />}
     </Plot>
   );
 }
 
 export const naiveBayes: AlgorithmDef<NaiveBayesState> = {
   id: 'naive-bayes',
-  name: 'Naive Bayes gaussiano',
-  group: 'Modelos lineares e probabilísticos',
-  tag: 'Classificação bayesiana',
+  name: 'Gaussian naive Bayes',
+  group: 'Linear and probabilistic models',
   kind: 'classification',
-  summary: 'Uma gaussiana por classe e o teorema de Bayes.',
   datasets: ['blobs', 'circles', 'linear', 'moons'],
   defaultDataset: 'blobs',
   defaultSpeed: 4,
   thumbnailSteps: 1000,
-  params: [{ key: 'smoothing', label: 'Suavização da variância', type: 'select', options: [0, 0.001, 0.01, 0.05], value: 0.001, help: 'Soma um valor fixo às variâncias, evitando divisões por quase zero.' }],
+  hint: 'Hover the plane to see Bayes’ theorem evaluated at that point. Drag points and watch the ellipses follow.',
+  params: [{ key: 'smoothing', label: 'Variance smoothing', type: 'select', options: [0, 0.001, 0.01, 0.05], value: 0.001, help: 'Added to every variance so a class with tightly packed points does not divide by almost zero.' }],
   create: (data, params) => createNaiveBayes(data, params as unknown as NaiveBayesParams),
   Visual: NaiveBayesVisual,
+  equation: (s, _data, _params, hover) => {
+    const A = COLORS.red, B = COLORS.blue;
+    const general = `P({\\color{${B}}B}\\mid\\mathbf{x}) = \\frac{P({\\color{${B}}B})\\,p(\\mathbf{x}\\mid {\\color{${B}}B})}{P({\\color{${A}}A})\\,p(\\mathbf{x}\\mid {\\color{${A}}A}) + P({\\color{${B}}B})\\,p(\\mathbf{x}\\mid {\\color{${B}}B})}`;
+    if (!hover) return general;
+    const a = joint(s, 0, hover.x, hover.y), b = joint(s, 1, hover.x, hover.y);
+    return `${general} = \\frac{${tex(b, 3)}}{${tex(a, 3)} + ${tex(b, 3)}} = ${tex(posterior(s, hover.x, hover.y))}`;
+  },
   metrics: (s, data) => [
-    { label: 'Pontos vistos', value: `${s.seen} / ${data.length}` },
-    { label: 'P(A) / P(B)', value: `${fmt(s.stats[0].n / Math.max(1, s.seen), 2)} / ${fmt(s.stats[1].n / Math.max(1, s.seen), 2)}` },
-    { label: 'μ A', value: `(${fmt(s.stats[0].mean[0], 2)}, ${fmt(s.stats[0].mean[1], 2)})` },
-    { label: 'μ B', value: `(${fmt(s.stats[1].mean[0], 2)}, ${fmt(s.stats[1].mean[1], 2)})` },
-    { label: 'Acurácia', value: pct(accuracy(data, (x, y) => posterior(s, x, y))) },
+    { label: 'Points seen', value: `${s.seen} of ${data.length}` },
+    { label: 'P(A), P(B)', value: `${fmt(s.stats[0].n / Math.max(1, s.seen), 2)}, ${fmt(s.stats[1].n / Math.max(1, s.seen), 2)}` },
+    { label: 'Accuracy', value: pct(accuracy(data, (x, y) => posterior(s, x, y))) },
   ],
   docs: {
     description:
-      'O Naive Bayes aplica o teorema de Bayes supondo que os atributos são independentes dentro de cada classe. Na versão gaussiana, cada classe é descrita por uma média e uma variância por atributo, desenhadas como elipses de 1σ e 2σ alinhadas aos eixos. A animação estima essas estatísticas um ponto por vez com o algoritmo de Welford, e o fundo mostra a probabilidade a posteriori da classe B. Como as variâncias das classes podem diferir, a fronteira é quadrática: repare que nos círculos ela vira uma curva fechada.',
+      'Naive Bayes applies Bayes’ theorem under the assumption that features are independent within each class. In the Gaussian version, each class is described by one mean and one variance per feature, drawn here as 1σ and 2σ ellipses aligned with the axes. The animation estimates these numbers one point at a time with Welford’s algorithm, and the background shows the posterior probability of class B. Because the two classes can have different variances, the boundary is quadratic: on the circles it closes into a loop.',
     steps: [
-      'Para cada classe, estime a proporção P(k), a média μₖ e a variância σ²ₖ de cada atributo.',
-      'Para um ponto novo, calcule P(k) · Πⱼ N(xⱼ; μₖⱼ, σ²ₖⱼ) para cada classe.',
-      'Normalize os valores para que somem 1: isso é P(k | x).',
-      'Preveja a classe com maior probabilidade a posteriori.',
+      'For each class, estimate the share $P(k)$, the mean $\\mu_k$ and the variance $\\sigma_k^2$ of each feature.',
+      'For a new point, compute $P(k)\\prod_j \\mathcal{N}(x_j;\\ \\mu_{kj},\\ \\sigma_{kj}^2)$ for each class.',
+      'Normalize those numbers so they sum to 1. That is $P(k\\mid\\mathbf{x})$.',
+      'Predict the class with the higher posterior.',
     ],
-    complexity: [['Treino', 'O(n·d)'], ['Predição', 'O(k·d)'], ['Espaço', 'O(k·d)']],
-    complexityNote: 'k é o número de classes. Um dos modelos mais baratos que existem, e treina em uma única passada.',
+    complexity: [['Training', 'O(n\\,d)'], ['Prediction', 'O(k\\,d)'], ['Memory', 'O(k\\,d)']],
+    complexityNote: 'k is the number of classes. One of the cheapest models there is, and it trains in a single pass.',
     pseudocode: [
-      'para cada classe k: nₖ ← 0 ; μₖ ← 0 ; Mₖ ← 0',
-      'para cada (x, y):',
+      'for each class k: nₖ ← 0 ; μₖ ← 0 ; Mₖ ← 0',
+      'for each (x, y):',
       '    nᵧ ← nᵧ + 1 ;  δ ← x - μᵧ',
       '    μᵧ ← μᵧ + δ / nᵧ',
       '    Mᵧ ← Mᵧ + δ · (x - μᵧ)',
       'σ²ₖ ← Mₖ / nₖ ;  P(k) ← nₖ / n',
-      'prever(x) = argmaxₖ  P(k) · Πⱼ N(xⱼ; μₖⱼ, σ²ₖⱼ)',
+      'predict(x) = argmaxₖ  P(k) · Πⱼ N(xⱼ; μₖⱼ, σ²ₖⱼ)',
     ],
     exercises: [
-      'Nos círculos, por que o Naive Bayes funciona razoavelmente apesar de ser um modelo tão simples?',
-      'Crie um conjunto em que os dois atributos são fortemente correlacionados e veja a hipótese ingênua falhar.',
-      'Troque as elipses alinhadas por elipses com covariância completa (isso vira a Análise Discriminante Quadrática).',
-      'Calcule tudo em escala logarítmica (log-verossimilhança) para evitar underflow com muitos atributos.',
+      'Why does naive Bayes do reasonably well on the circles, despite being so simple?',
+      'Draw a diagonal cloud of points for one class. Where does the independence assumption break?',
+      'Replace the axis-aligned ellipses with a full covariance matrix. That model is quadratic discriminant analysis.',
+      'Compute everything in log space (log-likelihoods) to avoid underflow with many features.',
     ],
   },
 };

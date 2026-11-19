@@ -1,20 +1,16 @@
 /**
- * Números aleatórios.
+ * Random numbers.
  *
- * Todo o projeto usa `random()` em vez de `Math.random()` diretamente.
- * Assim os testes podem chamar `seed(42)` e obter sempre os mesmos dados,
- * o que torna os resultados reproduzíveis (uma boa prática em ML).
+ * The whole project calls `random()` instead of `Math.random()`, so tests can
+ * call `seed(42)` and get the same data every run.
  */
 
 let generator: () => number = Math.random;
 
-/** Número uniforme em [0, 1). */
+/** Uniform in [0, 1). */
 export const random = (): number => generator();
 
-/**
- * Fixa a semente usando o algoritmo mulberry32: um gerador pequeno,
- * rápido e com boa distribuição para visualizações e testes.
- */
+/** Fixes the seed using mulberry32, a small and fast generator. */
 export function seed(s: number): void {
   let a = s >>> 0;
   generator = () => {
@@ -25,20 +21,20 @@ export function seed(s: number): void {
   };
 }
 
-/** Volta a usar Math.random. */
+/** Goes back to Math.random. */
 export function unseed(): void {
   generator = Math.random;
 }
 
-/** Uniforme em [a, b). */
+/** Uniform in [a, b). */
 export const uniform = (a: number, b: number): number => a + (b - a) * random();
 
-/** Inteiro uniforme em [0, n). */
+/** Integer in [0, n). */
 export const randInt = (n: number): number => Math.floor(random() * n);
 
 /**
- * Normal padrão N(0, 1) pela transformação de Box-Muller:
- * se U1 e U2 são uniformes, sqrt(-2 ln U1) · cos(2π U2) é normal.
+ * Standard normal N(0, 1) by the Box-Muller transform:
+ * if U1 and U2 are uniform, sqrt(-2 ln U1) · cos(2π U2) is normal.
  */
 export function randn(): number {
   let u = 0;
@@ -46,7 +42,7 @@ export function randn(): number {
   return Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * random());
 }
 
-/** Embaralhamento de Fisher-Yates, in place, O(n). */
+/** Fisher-Yates shuffle, in place, O(n). */
 export function shuffle<T>(arr: T[]): T[] {
   for (let i = arr.length - 1; i > 0; i--) {
     const j = randInt(i + 1);

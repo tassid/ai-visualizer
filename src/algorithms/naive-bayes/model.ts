@@ -1,18 +1,18 @@
 /**
- * Naive Bayes gaussiano.
+ * Gaussian naive Bayes.
  *
- * Pelo teorema de Bayes:  P(k | x) ∝ P(k) · P(x | k)
- * A hipótese "ingênua" é que os atributos são independentes dada a classe:
+ * By Bayes' theorem:  P(k | x) ∝ P(k) · P(x | k)
+ * The "naive" assumption is that features are independent within a class:
  *   P(x | k) = Πⱼ N(xⱼ; μₖⱼ, σ²ₖⱼ)
  *
- * Treinar é só estimar médias e variâncias por classe. Aqui fazemos isso de
- * forma ONLINE, um ponto por vez, com o algoritmo de Welford: ele atualiza
- * média e variância sem guardar os dados e é numericamente estável.
+ * Training is just estimating means and variances per class. Here we do it
+ * ONLINE, one point at a time, with Welford's algorithm: it updates the mean
+ * and variance without storing the data and is numerically stable.
  *
  *   n ← n + 1
  *   δ ← x - μ
  *   μ ← μ + δ / n
- *   M ← M + δ · (x - μ)          (variância = M / n)
+ *   M ← M + δ · (x - μ)          (variance = M / n)
  */
 import { gaussianPdf } from '../../core/math';
 import { range, shuffle } from '../../core/random';
@@ -39,18 +39,22 @@ const emptyStats = (): ClassStats => ({ n: 0, mean: [0, 0], m2: [0, 0] });
 
 export const variance = (st: ClassStats, j: number, smoothing: number) => (st.n > 1 ? st.m2[j] / st.n : 0.05) + smoothing;
 
-/** P(classe 1 | x, y). Retorna 0,5 enquanto alguma classe não tiver dados. */
-export function posterior(s: NaiveBayesState, x: number, y: number): number {
-  const [a, b] = s.stats;
-  if (a.n < 1 || b.n < 1) return 0.5;
-  const total = a.n + b.n;
-  const like = (st: ClassStats) =>
-    (st.n / total) * gaussianPdf(x, st.mean[0], variance(st, 0, s.smoothing)) * gaussianPdf(y, st.mean[1], variance(st, 1, s.smoothing));
-  const la = like(a), lb = like(b);
-  return la + lb === 0 ? 0.5 : lb / (la + lb);
+/** Prior times likelihood, P(k) · p(x | k), for one class. */
+export function joint(s: NaiveBayesState, k: 0 | 1, x: number, y: number): number {
+  const total = s.stats[0].n + s.stats[1].n;
+  const st = s.stats[k];
+  if (!total || !st.n) return 0;
+  return (st.n / total) * gaussianPdf(x, st.mean[0], variance(st, 0, s.smoothing)) * gaussianPdf(y, st.mean[1], variance(st, 1, s.smoothing));
 }
 
-/** Uma etapa do algoritmo de Welford. */
+/** P(class B | x, y). Stays at 0.5 until both classes have data. */
+export function posterior(s: NaiveBayesState, x: number, y: number): number {
+  if (s.stats[0].n < 1 || s.stats[1].n < 1) return 0.5;
+  const a = joint(s, 0, x, y), b = joint(s, 1, x, y);
+  return a + b === 0 ? 0.5 : b / (a + b);
+}
+
+/** One step of Welford's algorithm. */
 export function welford(st: ClassStats, x: number, y: number) {
   st.n++;
   const v = [x, y];
@@ -61,17 +65,17 @@ export function welford(st: ClassStats, x: number, y: number) {
   }
 }
 
-export function* train(data: Point[], P: NaiveBayesParams, s: NaiveBayesState): Generator<StepInfo, StepInfo> {
-  for (const i of shuffle(range(data.length))) {                        // linha 1
+export function* train(data: Point[], _P: NaiveBayesParams, s: NaiveBayesState): Generator<StepInfo, StepInfo> {
+  for (const i of shuffle(range(data.length))) {                        // line 1
     const p = data[i];
     s.current = i;
-    welford(s.stats[p.c], p.x, p.y);                                    // linhas 2 a 4
+    welford(s.stats[p.c], p.x, p.y);                                    // lines 2 to 4
     s.seen++;
     const st = s.stats[p.c];
-    yield { line: 3, message: `Classe ${p.c ? 'B' : 'A'}: n = ${st.n}, μ = (${st.mean[0].toFixed(2)}, ${st.mean[1].toFixed(2)}).` };
+    yield { line: 3, message: `Class ${p.c ? 'B' : 'A'}: n = ${st.n}, mean (${st.mean[0].toFixed(2)}, ${st.mean[1].toFixed(2)}).` };
   }
   s.current = -1;
-  return { line: 6, message: 'Médias e variâncias estimadas. O fundo mostra P(B | x) pelo teorema de Bayes.' };
+  return { line: 6, message: 'Means and variances estimated. The background shows P(B | x) from Bayes’ theorem.' };
 }
 
 export function createNaiveBayes(data: Point[], P: NaiveBayesParams): Trainer<NaiveBayesState> {

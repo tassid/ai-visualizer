@@ -1,18 +1,18 @@
 /**
- * Estruturas e funções de árvore de decisão, compartilhadas pela árvore
- * simples e pela floresta aleatória.
+ * Decision tree structures and helpers, shared by the single tree and the
+ * random forest.
  *
- * Critério de impureza: Gini.  G(p) = 1 - p² - (1-p)² = 2p(1-p)
- *   G = 0   → nó puro (só uma classe)
- *   G = 0,5 → metade de cada classe (máxima incerteza)
+ * Impurity criterion: Gini.  G(p) = 1 - p² - (1-p)² = 2p(1-p)
+ *   G = 0   → pure node (one class only)
+ *   G = 0.5 → half of each class (maximum uncertainty)
  *
- * Um corte é bom quando a média ponderada do Gini dos filhos é bem menor
- * que o Gini do pai. A diferença é o "ganho de impureza".
+ * A split is good when the weighted average Gini of the children is much
+ * lower than the parent's. The difference is the impurity gain.
  */
 import type { DiagramNode } from '../../components/charts/TreeDiagram';
 import type { Point } from '../../core/types';
 
-/** Retângulo [x0, x1, y0, y1] que o nó ocupa no plano. */
+/** The rectangle [x0, x1, y0, y1] a node covers on the plane. */
 export type Box = [number, number, number, number];
 
 export interface TreeNode {
@@ -20,11 +20,11 @@ export interface TreeNode {
   idx: number[];
   depth: number;
   box: Box;
-  /** Fração da classe 1 entre os exemplos do nó. */
+  /** Share of class 1 among the node's examples. */
   prob: number;
   n: number;
   leaf: boolean;
-  /** Atributo do corte: 0 = x, 1 = y. */
+  /** Split feature: 0 = x, 1 = y. */
   feature?: 0 | 1;
   threshold?: number;
   left?: TreeNode;
@@ -34,7 +34,7 @@ export interface TreeNode {
 export interface Split {
   feature: 0 | 1;
   threshold: number;
-  /** Gini ponderado dos filhos. */
+  /** Weighted Gini of the children. */
   gini: number;
   gain: number;
 }
@@ -52,11 +52,11 @@ export function makeNode(data: Point[], idx: number[], depth: number, box: Box):
 const value = (p: Point, f: 0 | 1) => (f === 0 ? p.x : p.y);
 
 /**
- * Melhor corte entre os atributos permitidos.
+ * Best split among the allowed features.
  *
- * Truque para ficar O(n log n) por atributo em vez de O(n²): ordenamos os
- * exemplos pelo atributo e varremos da esquerda para a direita, mantendo a
- * contagem acumulada da classe 1. Assim cada limiar candidato custa O(1).
+ * The trick that makes this O(n log n) per feature instead of O(n²): sort the
+ * examples by the feature and sweep left to right, keeping a running count of
+ * class 1. Each candidate threshold then costs O(1).
  */
 export function bestSplit(data: Point[], idx: number[], features: (0 | 1)[]): Split | null {
   const n = idx.length;
@@ -72,7 +72,7 @@ export function bestSplit(data: Point[], idx: number[], features: (0 | 1)[]): Sp
     for (let k = 1; k < n; k++) {
       left += data[sorted[k - 1]].c;
       const v0 = value(data[sorted[k - 1]], f), v1 = value(data[sorted[k]], f);
-      if (v1 === v0) continue; // não dá para separar valores iguais
+      if (v1 === v0) continue; // equal values cannot be separated
       const g = (k * gini(left / k) + (n - k) * gini((total - left) / (n - k))) / n;
       const gain = parent - g;
       if (gain > 1e-9 && (!best || g < best.gini)) best = { feature: f, threshold: (v0 + v1) / 2, gini: g, gain };
@@ -81,7 +81,7 @@ export function bestSplit(data: Point[], idx: number[], features: (0 | 1)[]): Sp
   return best;
 }
 
-/** Divide o nó em dois filhos, recortando também o retângulo. */
+/** Splits a node into two children, cutting its rectangle too. */
 export function applySplit(data: Point[], node: TreeNode, split: Split): [TreeNode, TreeNode] {
   node.feature = split.feature;
   node.threshold = split.threshold;
@@ -95,12 +95,21 @@ export function applySplit(data: Point[], node: TreeNode, split: Split): [TreeNo
   return [node.left, node.right];
 }
 
-/** Desce a árvore até uma folha (ou um nó ainda não dividido). */
-export function predictTree(node: TreeNode, x: number, y: number): number {
+/** Nodes visited from the root to the leaf (or unsplit node) that contains (x, y). */
+export function pathTo(node: TreeNode, x: number, y: number): TreeNode[] {
+  const out = [node];
   let n = node;
-  while (n.left && n.right) n = (n.feature === 0 ? x : y) < n.threshold! ? n.left : n.right;
-  return n.prob;
+  while (n.left && n.right) {
+    n = (n.feature === 0 ? x : y) < n.threshold! ? n.left : n.right;
+    out.push(n);
+  }
+  return out;
 }
+
+export const predictTree = (node: TreeNode, x: number, y: number): number => {
+  const p = pathTo(node, x, y);
+  return p[p.length - 1].prob;
+};
 
 export function countNodes(n: TreeNode | undefined): number {
   return n ? 1 + countNodes(n.left) + countNodes(n.right) : 0;
@@ -110,7 +119,7 @@ export function treeDepth(n: TreeNode): number {
   return n.left && n.right ? Math.max(treeDepth(n.left), treeDepth(n.right)) : n.depth;
 }
 
-/** Lista os cortes como segmentos no plano: [x0, y0, x1, y1]. */
+/** The splits as segments on the plane: [x0, y0, x1, y1]. */
 export function splitSegments(n: TreeNode, out: [number, number, number, number][] = []) {
   if (!n.left || !n.right) return out;
   const [x0, x1, y0, y1] = n.box, t = n.threshold!;
@@ -120,7 +129,7 @@ export function splitSegments(n: TreeNode, out: [number, number, number, number]
   return out;
 }
 
-/** Converte para o formato do componente TreeDiagram. */
+/** Converts to the TreeDiagram component's format. */
 export function toDiagram(n: TreeNode): DiagramNode {
   return {
     id: n.id,

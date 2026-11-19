@@ -1,68 +1,74 @@
 # AI Visualizer
 
-Visualizador interativo de algoritmos de aprendizado de máquina, com animações passo a passo. Inspirado no [Sort Visualizer](https://github.com/Myphz/sortvisualizer), mas para IA: perceptron, MLP, SVM, KNN, árvores, K-Means, DBSCAN, PCA e mais.
+Interactive, step-by-step visualizations of machine learning algorithms. Like [Sort Visualizer](https://github.com/Myphz/sortvisualizer), but for models: you watch a perceptron, a neural network, an SVM, k-means and others train, one update at a time. The look follows [3Blue1Brown](https://www.3blue1brown.com): Manim colors, a number plane, Computer Modern math.
 
-**Demo:** https://tassid.github.io/ai-visualizer/
+**Live:** https://tassid.github.io/ai-visualizer/
 
-Cada algoritmo foi escrito do zero em TypeScript, sem bibliotecas de ML, e pensado para ser lido. O objetivo é estudar: você vê o modelo aprendendo, a linha do pseudocódigo que está rodando e o código real que faz aquilo.
+Every algorithm is written from scratch in TypeScript, with no ML library, and meant to be read alongside the animation.
 
-## Algoritmos
+## What you can do
 
-| Grupo | Algoritmo | O que a animação mostra |
+1. Play, pause, or step through single updates. The pseudocode highlights the line that just ran, and the model's formula updates with live numbers.
+2. Edit the data: click to add a point, drag to move one, shift-click to delete. A trained model retrains immediately, so the boundary follows your hand.
+3. Move the model itself: drag the line of a perceptron, logistic regression or SVM, fit a regression line by hand, place k-means centroids, turn the PCA axis.
+4. Probe it: hover the plane to send a point through the neural network, trace its path down the decision tree, count the forest's votes, or see the k nearest neighbors.
+
+## Algorithms
+
+| Group | Algorithm | What the animation shows |
 | --- | --- | --- |
-| Redes neurais | Perceptron | A reta corrigida a cada erro, com o vetor de pesos |
-| Redes neurais | MLP (backpropagation) | Fronteira de decisão e mapa de ativação de cada neurônio |
-| Modelos lineares | Regressão linear | Resíduos, ajuste polinomial e paisagem de perda com curvas de nível |
-| Modelos lineares | Regressão logística | Probabilidade, fronteira e linhas de p = 0,25 e 0,75 |
-| Modelos lineares | SVM linear | Margem, vetores de suporte e perda hinge |
-| Probabilísticos | Naive Bayes gaussiano | Elipses de cada classe estimadas ponto a ponto (Welford) |
-| Instâncias e árvores | KNN | Varredura do plano com vizinhos e raio |
-| Instâncias e árvores | Árvore de decisão | Cortes por Gini nível a nível e diagrama da árvore |
-| Instâncias e árvores | Floresta aleatória | Bootstrap, média das árvores e erro out of bag |
-| Não supervisionado | K-Means | Atribuição, centroides deslizando e regiões de Voronoi |
-| Não supervisionado | DBSCAN | Núcleos, borda, ruído e a fila de expansão |
-| Não supervisionado | PCA | Reta girando, projeções e variância por ângulo |
+| Neural networks | Perceptron | The line correcting itself on each mistake, with the weight vector |
+| Neural networks | Multilayer perceptron | The boundary, and every neuron's activation map |
+| Linear and probabilistic | Linear regression | Squared errors as squares, polynomial fits, loss landscape with contours |
+| Linear and probabilistic | Logistic regression | Probability, boundary, and the p = 0.25 and 0.75 lines |
+| Linear and probabilistic | Linear SVM | Margin, support vectors, hinge loss |
+| Linear and probabilistic | Gaussian naive Bayes | Class ellipses estimated point by point (Welford) |
+| Instance and tree | k-nearest neighbors | A sweep of the plane with neighbors and radius |
+| Instance and tree | Decision tree | Gini splits level by level, and the tree itself |
+| Instance and tree | Random forest | Bootstrap samples, averaged trees, out-of-bag error |
+| Unsupervised | k-means | Assignment, centroids gliding, Voronoi regions |
+| Unsupervised | DBSCAN | Core, border and noise points, the expansion queue |
+| Unsupervised | PCA | A turning line, projections, variance by angle |
 
 ## Stack
 
-React 19 + TypeScript + Vite, **Framer Motion** para as animações (retas, centroides, nós da árvore, destaque do pseudocódigo, transições de página), **D3** para escalas, gráficos, layout de árvore (`d3-hierarchy`) e curvas de nível (`d3-contour`), e **Vitest** para os testes dos modelos.
+React 19, TypeScript and Vite. **Framer Motion** animates what moves (lines, centroids, tree nodes, the pseudocode highlight). **D3** computes scales, chart paths, the tree layout (`d3-hierarchy`) and the loss contours (`d3-contour`). **KaTeX** renders the math. **Vitest** tests the models.
 
-## Como rodar
+## Run it
 
 ```bash
 npm install
 npm run dev        # http://localhost:5173/ai-visualizer/
-npm test           # testes dos algoritmos
-npm run build      # verificação de tipos + build de produção em dist/
+npm test           # model tests
+npm run build      # type check and production build into dist/
 ```
 
-O deploy no GitHub Pages é automático a cada push na `main` (`.github/workflows/deploy.yml`). Na primeira vez, ative em **Settings → Pages → Source: GitHub Actions**.
+Every push to `main` deploys to GitHub Pages (`.github/workflows/deploy.yml`). The first time, set **Settings → Pages → Source** to **GitHub Actions**.
 
-## Como o código está organizado
+## How the code is organized
 
 ```
 src/
-├── core/                  tipos, matemática, números aleatórios, cores e conjuntos de dados
-├── engine/                motor de animação (useTrainer) e rotas
+├── core/                  types, math, random numbers, colors, datasets
+├── engine/                animation engine (useTrainer), editing context, routing
 ├── components/
-│   ├── plot/              gráfico principal: canvas (fundo) + SVG (Framer Motion)
-│   ├── charts/            LineChart, TreeDiagram, NetworkDiagram, LossLandscape (D3)
-│   └── ui/                controles, parâmetros, métricas, pseudocódigo
+│   ├── plot/              main plot: canvas background + SVG marks and drag handles
+│   ├── charts/            LineChart, TreeDiagram, NetworkDiagram, LossLandscape
+│   └── ui/                controls, pseudocode, live equation, KaTeX
 ├── algorithms/
 │   ├── perceptron/
-│   │   ├── model.ts       o algoritmo em si, como generator
-│   │   ├── model.test.ts  testes que provam propriedades do algoritmo
-│   │   ├── Visual.tsx     o que desenhar
-│   │   └── index.ts       metadados: parâmetros, métricas, textos, pseudocódigo
-│   ├── mlp/               + network.ts (rede do zero) e optimizers.ts (SGD, Momentum, Adam)
-│   ├── shared/tree.ts     Gini, melhor corte, predição (usado por árvore e floresta)
+│   │   ├── model.ts       the algorithm, as a generator
+│   │   ├── model.test.ts  tests of its mathematical properties
+│   │   └── index.tsx      what to draw, parameters, formula, text, pseudocode
+│   ├── mlp/               + network.ts (from scratch) and optimizers.ts (SGD, Momentum, Adam)
+│   ├── shared/tree.ts     Gini, best split, prediction (used by tree and forest)
 │   └── ...
-└── pages/                 Home e AlgorithmPage (genérica para todos os algoritmos)
+└── pages/                 Home and AlgorithmPage (one page for every algorithm)
 ```
 
-### A ideia central: algoritmos como generators
+### The core idea: algorithms as generators
 
-Cada algoritmo é uma `function*`. Cada `yield` é um passo da animação e informa qual linha do pseudocódigo destacar:
+Each algorithm is a `function*`. Each `yield` is one animation step and names the pseudocode line to highlight:
 
 ```ts
 export function* train(data, P, s) {
@@ -73,25 +79,25 @@ export function* train(data, P, s) {
         s.w[0] += P.lr * y * p.x;
         s.w[1] += P.lr * y * p.y;
         s.b += P.lr * y;
-        yield { line: 6, message: 'Errou: w e b se movem.' };
+        yield { line: 6, message: 'Wrong side: w moves toward this point.' };
       } else {
-        yield { line: 4, message: 'Acertou: nada muda.' };
+        yield { line: 4, message: 'Correct: nothing changes.' };
       }
     }
   }
 }
 ```
 
-O código fica parecido com o pseudocódigo de um livro, e o motor (`src/engine/useTrainer.ts`) só chama `.next()` no ritmo escolhido. Os mesmos generators rodam nos testes, sem interface.
+The code reads like textbook pseudocode, and the engine (`src/engine/useTrainer.ts`) only calls `.next()` at the chosen pace. The tests run the same generators without any UI.
 
-Mais detalhes em [docs/ARQUITETURA.md](docs/ARQUITETURA.md).
+More in [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
 
-## Para estudar
+## Studying with it
 
-1. [docs/GUIA_DE_ESTUDO.md](docs/GUIA_DE_ESTUDO.md): ordem sugerida, o que observar em cada algoritmo e exercícios.
-2. [docs/NOVO_ALGORITMO.md](docs/NOVO_ALGORITMO.md): passo a passo para implementar um algoritmo novo (bom exercício).
-3. Cada página do site tem uma seção "Para estudar" com desafios específicos.
+1. [docs/STUDY_GUIDE.md](docs/STUDY_GUIDE.md): a suggested order, what to look for, and questions.
+2. [docs/NEW_ALGORITHM.md](docs/NEW_ALGORITHM.md): how to add an algorithm of your own.
+3. Every algorithm page ends with exercises.
 
-## Licença
+## License
 
-MIT. Feito por Tassiane Anzolin.
+MIT. Built by Tassiane Anzolin.

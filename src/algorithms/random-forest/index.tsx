@@ -1,73 +1,79 @@
-import { binaryColor, classColor } from '../../core/colors';
-import { accuracy, pct } from '../../core/math';
+import { binaryColor, classColor, COLORS } from '../../core/colors';
+import { accuracy, pct, tex } from '../../core/math';
 import type { AlgorithmDef, VisualProps } from '../../core/types';
 import { Plot } from '../../components/plot/Plot';
-import { Points } from '../../components/plot/marks';
-import { countNodes } from '../shared/tree';
+import { Points, Ring } from '../../components/plot/marks';
+import { countNodes, predictTree } from '../shared/tree';
 import { SplitLines } from '../decision-tree';
 import { createForest, forestPredict, type ForestParams, type ForestState } from './model';
 
-function ForestVisual({ state: s, data, version, compact }: VisualProps<ForestState>) {
+function ForestVisual({ state: s, data, version, hover, compact }: VisualProps<ForestState>) {
   const last = s.trees[s.trees.length - 1];
   const bag = s.inBag[s.inBag.length - 1];
   return (
-    <Plot interactive={false} heatmap={s.trees.length ? { version, resolution: 96, color: (x, y) => binaryColor(forestPredict(s, x, y)) } : null}>
-      {last && !compact && <SplitLines key={s.trees.length} root={last} color="rgba(255,209,102,.55)" width={1.2} />}
+    <Plot heatmap={s.trees.length ? { version, resolution: 96, color: (x, y) => binaryColor(forestPredict(s, x, y)) } : null}>
+      {last && !compact && <SplitLines key={s.trees.length} root={last} color="rgba(255,255,0,.5)" width={1.1} />}
       <Points data={data} color={(p) => classColor(p.c)} radius={(_, i) => (!bag || bag[i] ? 4.6 : 2.6)} />
+      {!compact && hover && <Ring at={hover} r={6} color={COLORS.yellow} />}
     </Plot>
   );
 }
 
 export const randomForest: AlgorithmDef<ForestState> = {
   id: 'random-forest',
-  name: 'Floresta aleatória',
-  group: 'Instâncias e árvores',
-  tag: 'Ensemble (bagging)',
+  name: 'Random forest',
+  group: 'Instance and tree methods',
   kind: 'classification',
-  summary: 'Média de muitas árvores treinadas em amostras diferentes.',
   datasets: ['moons', 'circles', 'xor', 'spiral', 'blobs'],
   defaultDataset: 'moons',
   defaultSpeed: 3,
   thumbnailSteps: 20,
+  hint: 'Hover the plane to count how the trees vote at that point.',
   params: [
-    { key: 'trees', label: 'Número de árvores', type: 'range', min: 1, max: 80, step: 1, value: 40 },
-    { key: 'depth', label: 'Profundidade máxima', type: 'range', min: 1, max: 12, step: 1, value: 7 },
-    { key: 'maxFeatures', label: 'Atributos por corte', type: 'select', options: ['1 aleatório', 'todos'], value: '1 aleatório', help: 'Com "todos", só o bootstrap diferencia as árvores.' },
+    { key: 'trees', label: 'Trees', type: 'range', min: 1, max: 80, step: 1, value: 40 },
+    { key: 'depth', label: 'Max depth', type: 'range', min: 1, max: 12, step: 1, value: 7 },
+    { key: 'maxFeatures', label: 'Features per split', type: 'select', options: ['1 at random', 'all'], value: '1 at random', help: 'With "all", only the bootstrap sample makes the trees differ.' },
   ],
   create: (data, params) => createForest(data, params as unknown as ForestParams),
   Visual: ForestVisual,
-  history: { label: 'Erro out of bag', get: (s) => s.history },
+  history: { label: 'Out-of-bag error', get: (s) => s.history },
+  equation: (s, _data, _params, hover) => {
+    const head = `\\hat p(\\mathbf{x}) = \\frac{1}{T}\\sum_{t=1}^{T} h_t(\\mathbf{x})`;
+    if (!hover || !s.trees.length) return `${head} \\qquad T = ${s.trees.length}`;
+    const votesB = s.trees.filter((t) => predictTree(t, hover.x, hover.y) > 0.5).length;
+    return `${head} = ${tex(forestPredict(s, hover.x, hover.y))} \\qquad {\\color{${COLORS.blue}}${votesB}} \\text{ of } ${s.trees.length} \\text{ trees vote B}`;
+  },
   metrics: (s, data) => [
-    { label: 'Árvores', value: s.trees.length },
-    { label: 'Acurácia (treino)', value: pct(accuracy(data, (x, y) => forestPredict(s, x, y))) },
-    { label: 'Acurácia out of bag', value: pct(s.oobAccuracy) },
-    { label: 'Nós na última árvore', value: s.trees.length ? countNodes(s.trees[s.trees.length - 1]) : 0 },
+    { label: 'Trees', value: s.trees.length },
+    { label: 'Training accuracy', value: pct(accuracy(data, (x, y) => forestPredict(s, x, y))) },
+    { label: 'Out-of-bag accuracy', value: pct(s.oobAccuracy) },
+    { label: 'Nodes in the last tree', value: s.trees.length ? countNodes(s.trees[s.trees.length - 1]) : 0 },
   ],
   docs: {
     description:
-      'A floresta aleatória combina muitas árvores de decisão. Cada árvore é treinada em uma amostra bootstrap (sorteio com reposição) e, a cada corte, só pode usar um atributo sorteado. As árvores erram de formas diferentes, e a média das previsões reduz a variância, gerando fronteiras mais suaves e estáveis que as de uma árvore só. As linhas amarelas mostram os cortes da árvore mais recente, e os pontos menores ficaram fora da amostra dela (out of bag). O erro out of bag, no gráfico ao lado, estima o erro de teste sem separar dados.',
+      'A random forest averages many decision trees. Each tree trains on a bootstrap sample (drawn with replacement) and each split may only use one randomly chosen feature. The trees make different mistakes, and averaging them lowers the variance, so the boundary is smoother and steadier than a single tree’s. The yellow lines are the splits of the newest tree, and the small points were left out of its sample. The out-of-bag error, charted on the side, estimates the test error without holding out any data.',
     steps: [
-      'Sorteie n exemplos com reposição (bootstrap).',
-      'Cresça uma árvore nessa amostra, sorteando quais atributos cada corte pode usar.',
-      'Repita para T árvores.',
-      'A previsão é a média (ou votação) de todas as árvores.',
+      'Draw $n$ examples with replacement (a bootstrap sample).',
+      'Grow a tree on that sample, picking at random which features each split may use.',
+      'Repeat for $T$ trees.',
+      'Predict with the average of all trees, $\\hat p(\\mathbf{x}) = \\frac{1}{T}\\sum_t h_t(\\mathbf{x})$.',
     ],
-    complexity: [['Treino', 'O(T · d · n log n · h)'], ['Predição', 'O(T · h)'], ['Espaço', 'O(T · nós)']],
-    complexityNote: 'T é o número de árvores e h a profundidade. As árvores são independentes, então o treino paraleliza perfeitamente.',
+    complexity: [['Training', 'O(T\\,d\\,n\\log n\\,h)'], ['Prediction', 'O(T\\,h)'], ['Memory', 'O(T \\cdot \\text{nodes})']],
+    complexityNote: 'T is the number of trees and h their depth. The trees are independent, so training parallelizes perfectly.',
     pseudocode: [
-      'floresta ← []',
-      'para t = 1 até T:',
-      '    amostra ← sortear n exemplos com reposição',
-      '    árvore ← construir(amostra, atributos aleatórios por corte)',
-      '    floresta.adicionar(árvore)',
+      'forest ← []',
+      'for t = 1 to T:',
+      '    sample ← draw n examples with replacement',
+      '    tree ← build(sample, random features per split)',
+      '    forest.add(tree)',
       '',
-      'prever(x) = média de árvore(x) para cada árvore na floresta',
+      'predict(x) = mean of tree(x) over the forest',
     ],
     exercises: [
-      'Compare uma floresta de 1 árvore com uma de 80: o que acontece com a acurácia out of bag?',
-      'Troque "1 aleatório" por "todos". As árvores ficam mais parecidas entre si? Como isso afeta o erro?',
-      'Implemente a importância de atributos por diminuição média de impureza.',
-      'Implemente o gradient boosting com árvores rasas (profundidade 1 a 3) e compare com a floresta.',
+      'Compare a forest of 1 tree with one of 80. What happens to the out-of-bag accuracy?',
+      'Switch "1 at random" to "all". Do the trees look more alike? How does that change the error?',
+      'Implement feature importance by mean decrease in impurity.',
+      'Implement gradient boosting with shallow trees (depth 1 to 3) and compare it with the forest.',
     ],
   },
 };

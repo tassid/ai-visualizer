@@ -4,10 +4,10 @@ import { seed } from '../../core/random';
 import { runToEnd } from '../../engine/useTrainer';
 import { createSvm, decision, isSupport, margin } from './model';
 
-describe('SVM linear', () => {
+describe('linear SVM', () => {
   beforeEach(() => seed(5));
 
-  it('separa dados linearmente separáveis', () => {
+  it('separates linearly separable data', () => {
     const data = DATASETS.linear.generate();
     const t = createSvm(data, { lambda: 0.001, lr: 0.5, iters: 1500 });
     runToEnd(t);
@@ -15,7 +15,7 @@ describe('SVM linear', () => {
     expect(errors / data.length).toBeLessThan(0.03);
   });
 
-  it('λ maior produz margem maior', () => {
+  it('a larger λ gives a wider margin', () => {
     const data = DATASETS.blobs.generate();
     const small = createSvm(data, { lambda: 0.001, lr: 0.5, iters: 800 });
     const big = createSvm(data, { lambda: 0.5, lr: 0.5, iters: 800 });
@@ -24,7 +24,7 @@ describe('SVM linear', () => {
     expect(margin(big.state)).toBeGreaterThan(margin(small.state));
   });
 
-  it('apenas parte dos pontos são vetores de suporte', () => {
+  it('only some points are support vectors', () => {
     const data = DATASETS.linear.generate();
     const t = createSvm(data, { lambda: 0.01, lr: 0.5, iters: 800 });
     runToEnd(t);

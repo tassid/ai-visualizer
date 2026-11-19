@@ -1,45 +1,41 @@
 /**
- * Funções matemáticas usadas pelos algoritmos.
- * Escritas à mão (sem bibliotecas) para que dê para ler cada fórmula.
+ * Math helpers used by the algorithms. Written by hand, without libraries,
+ * so every formula can be read.
  */
 import type { Point } from './types';
 
 export const clamp = (v: number, lo: number, hi: number) => Math.max(lo, Math.min(hi, v));
 
-/** Função logística σ(z) = 1 / (1 + e^(-z)). Mapeia qualquer real em (0, 1). */
+/** Logistic function σ(z) = 1 / (1 + e^(-z)). Maps any real number into (0, 1). */
 export const sigmoid = (z: number) => 1 / (1 + Math.exp(-z));
 
-/** Produto escalar a · b. */
+/** Dot product a · b. */
 export function dot(a: ArrayLike<number>, b: ArrayLike<number>): number {
   let s = 0;
   for (let i = 0; i < a.length; i++) s += a[i] * b[i];
   return s;
 }
 
-/** Distância euclidiana ao quadrado (evita a raiz quando só precisamos comparar). */
+/** Squared Euclidean distance (skips the square root when we only compare). */
 export const sqDist = (ax: number, ay: number, bx: number, by: number) => (ax - bx) ** 2 + (ay - by) ** 2;
 
 export const mean = (xs: number[]) => (xs.length ? xs.reduce((a, b) => a + b, 0) / xs.length : 0);
 
-/** Índice do maior elemento. */
 export function argmax(xs: ArrayLike<number>): number {
   let best = 0;
   for (let i = 1; i < xs.length; i++) if (xs[i] > xs[best]) best = i;
   return best;
 }
 
-/** n valores igualmente espaçados entre a e b (inclusive). */
+/** n evenly spaced values from a to b, inclusive. */
 export const linspace = (a: number, b: number, n: number) =>
   Array.from({ length: n }, (_, i) => a + ((b - a) * i) / Math.max(1, n - 1));
 
-/**
- * Entropia cruzada binária: -[y·log(p) + (1-y)·log(1-p)].
- * O epsilon evita log(0).
- */
+/** Binary cross-entropy: -[y·log(p) + (1-y)·log(1-p)]. The epsilon avoids log(0). */
 export const binaryCrossEntropy = (p: number, y: number, eps = 1e-9) =>
   -(y * Math.log(p + eps) + (1 - y) * Math.log(1 - p + eps));
 
-/** Acurácia de um preditor de probabilidade (classe 1 se p > 0,5). */
+/** Accuracy of a probability predictor (class 1 when p > 0.5). */
 export function accuracy(data: Point[], predict: (x: number, y: number) => number): number {
   if (!data.length) return 0;
   let ok = 0;
@@ -55,7 +51,7 @@ export interface Covariance2 {
   yy: number;
 }
 
-/** Média e matriz de covariância 2x2 de um conjunto de pontos. */
+/** Mean and 2x2 covariance matrix of a set of points. */
 export function covariance2(points: { x: number; y: number }[]): Covariance2 {
   const n = points.length || 1;
   let mx = 0, my = 0;
@@ -70,11 +66,9 @@ export function covariance2(points: { x: number; y: number }[]): Covariance2 {
 }
 
 /**
- * Autovalores e autovetor principal de uma matriz simétrica 2x2 [[a, b], [b, c]].
- *
- * Para 2x2 existe fórmula fechada:
+ * Eigenvalues and principal eigenvector of a symmetric 2x2 matrix [[a, b], [b, c]].
  *   λ = (a + c)/2 ± sqrt(((a - c)/2)² + b²)
- * e o ângulo do autovetor principal é θ = ½ · atan2(2b, a - c).
+ *   angle of the principal eigenvector: θ = ½ · atan2(2b, a - c)
  */
 export function eigen2(a: number, b: number, c: number) {
   const tr = (a + c) / 2;
@@ -84,9 +78,19 @@ export function eigen2(a: number, b: number, c: number) {
   return { l1: tr + d, l2: Math.max(0, tr - d), angle };
 }
 
-/** Densidade da normal N(μ, σ²) em x. */
+/** Density of N(μ, σ²) at x. */
 export const gaussianPdf = (x: number, mu: number, variance: number) =>
   Math.exp(-((x - mu) ** 2) / (2 * variance)) / Math.sqrt(2 * Math.PI * variance);
 
-export const fmt = (v: number, digits = 3) => (Number.isFinite(v) ? v.toFixed(digits) : '...');
-export const pct = (v: number) => (Number.isFinite(v) ? (v * 100).toFixed(1) + '%' : '...');
+export const fmt = (v: number, digits = 3) => (Number.isFinite(v) ? v.toFixed(digits) : 'n/a');
+export const pct = (v: number) => (Number.isFinite(v) ? (v * 100).toFixed(1) + '%' : 'n/a');
+
+/** Number formatted for TeX, with a real minus sign. */
+export const tex = (v: number, digits = 2) => (Number.isFinite(v) ? v.toFixed(digits) : '?');
+
+/** A signed term for TeX, e.g. "+ 0.33 x_1" or "- 0.26 x_2". */
+export const texTerm = (v: number, symbol: string, digits = 2, color?: string) => {
+  const num = Math.abs(v).toFixed(digits);
+  const body = color ? `{\\color{${color}}${num}}` : num;
+  return `${v < 0 ? '-' : '+'} ${body}\\,${symbol}`;
+};

@@ -1,7 +1,6 @@
 /**
- * Conversão mínima de MultiPolygon (GeoJSON, saída do d3-contour) para o
- * atributo `d` de um <path> SVG. Substitui o d3-geo, que seria pesado demais
- * para só escalar coordenadas.
+ * Minimal conversion from a GeoJSON MultiPolygon (d3-contour's output) to an
+ * SVG path string. Replaces d3-geo, which would be heavy just to scale points.
  */
 import type { ContourMultiPolygon } from 'd3-contour';
 

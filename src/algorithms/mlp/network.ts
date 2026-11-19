@@ -1,15 +1,14 @@
 /**
- * Rede neural densa (MLP) escrita do zero, sem bibliotecas.
+ * A dense neural network (MLP) written from scratch.
  *
- * Notação usada nos comentários:
- *   a(0) = entrada x
- *   z(l) = W(l) · a(l-1) + b(l)        pré-ativação da camada l
- *   a(l) = g(z(l))                      ativação (tanh, relu ou sigmoide)
- *   a(L) = σ(z(L))                      saída: probabilidade da classe 1
+ * Notation used in the comments:
+ *   a(0) = input x
+ *   z(l) = W(l) · a(l-1) + b(l)        pre-activation of layer l
+ *   a(l) = g(z(l))                      activation (tanh, relu or sigmoid)
+ *   a(L) = σ(z(L))                      output: probability of class 1
  *
- * A perda é a entropia cruzada binária. Com saída sigmoide, a derivada da
- * perda em relação a z(L) fica simplesmente a(L) - y, o que simplifica a
- * retropropagação.
+ * The loss is binary cross-entropy. With a sigmoid output, its derivative
+ * with respect to z(L) is simply a(L) - y, which keeps backpropagation short.
  */
 import { sigmoid } from '../../core/math';
 import { randn } from '../../core/random';
@@ -18,9 +17,9 @@ export type ActivationName = 'tanh' | 'relu' | 'sigmoid';
 
 export interface Activation {
   f: (z: number) => number;
-  /** Derivada escrita em função da ATIVAÇÃO a = f(z), que já temos guardada. */
+  /** Derivative written in terms of the ACTIVATION a = f(z), which we already store. */
   df: (a: number) => number;
-  /** Intervalo de saída, usado para colorir os mapas de ativação. */
+  /** Output range, used to color the activation maps. */
   range: [number, number];
 }
 
@@ -30,7 +29,7 @@ export const ACTIVATIONS: Record<ActivationName, Activation> = {
   sigmoid: { f: sigmoid, df: (a) => a * (1 - a), range: [0, 1] },
 };
 
-/** Pesos e vieses de todas as camadas. W[l][i][j] liga o neurônio j da camada l ao neurônio i da camada l+1. */
+/** Weights and biases of all layers. W[l][i][j] connects neuron j of layer l to neuron i of layer l+1. */
 export interface Layers {
   W: Float64Array[][];
   B: Float64Array[];
@@ -47,8 +46,8 @@ export class Network {
     this.params = { W: [], B: [] };
     for (let l = 0; l < sizes.length - 1; l++) {
       const nIn = sizes[l], nOut = sizes[l + 1];
-      // Inicialização de Xavier (tanh/sigmoide) ou He (ReLU): mantém a variância
-      // das ativações estável de camada em camada, evitando gradientes que somem.
+      // Xavier (tanh/sigmoid) or He (ReLU) initialization keeps the variance of
+      // activations stable from layer to layer, so gradients do not vanish.
       const scale = Math.sqrt((activation === 'relu' ? 2 : 1) / nIn);
       this.params.W.push(Array.from({ length: nOut }, () => Float64Array.from({ length: nIn }, () => randn() * scale)));
       this.params.B.push(new Float64Array(nOut));
@@ -63,7 +62,7 @@ export class Network {
     return this.params.W.reduce((s, m, l) => s + m.length * m[0].length + this.params.B[l].length, 0);
   }
 
-  /** Cria uma estrutura de zeros com o mesmo formato dos parâmetros (para gradientes e otimizadores). */
+  /** Zeros shaped like the parameters (for gradients and optimizer state). */
   zerosLike(): Layers {
     return {
       W: this.params.W.map((m) => m.map((r) => new Float64Array(r.length))),
@@ -71,7 +70,7 @@ export class Network {
     };
   }
 
-  /** Propagação direta. Retorna as ativações de todas as camadas, inclusive a entrada. */
+  /** Forward pass. Returns the activations of every layer, input included. */
   forward(x: number, y: number): Float64Array[] {
     const acts: Float64Array[] = [Float64Array.of(x, y)];
     let a = acts[0];
@@ -96,14 +95,14 @@ export class Network {
   }
 
   /**
-   * Retropropagação para um exemplo, ACUMULANDO o gradiente em `grad`.
+   * Backpropagation for one example, ADDING the gradient into `grad`.
    *
    *   δ(L)   = a(L) - y
    *   ∂W(l)  = δ(l) · a(l-1)ᵀ
    *   ∂b(l)  = δ(l)
    *   δ(l-1) = (W(l)ᵀ · δ(l)) ⊙ g'(a(l-1))
    *
-   * Retorna a perda (entropia cruzada) do exemplo.
+   * Returns the example's loss (cross-entropy).
    */
   backward(x: number, y: number, target: number, grad: Layers): number {
     const acts = this.forward(x, y);

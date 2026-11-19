@@ -1,6 +1,6 @@
 /**
- * Roteamento mínimo baseado no hash da URL (#/perceptron).
- * Funciona no GitHub Pages sem configurar redirecionamentos de servidor.
+ * Minimal routing on the URL hash (#/perceptron).
+ * Works on GitHub Pages without any server redirects.
  */
 import { useEffect, useState } from 'react';
 

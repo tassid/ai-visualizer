@@ -1,7 +1,7 @@
 /**
- * Registro de algoritmos. Para adicionar um novo, crie a pasta com
- * model.ts + index.tsx (veja docs/NOVO_ALGORITMO.md) e inclua aqui.
- * A ordem desta lista é a ordem da página inicial.
+ * Algorithm registry. To add one, create its folder with model.ts and
+ * index.tsx (see docs/NEW_ALGORITHM.md) and list it here. The order of this
+ * list is the order on the home page.
  */
 import type { AlgorithmDef } from '../core/types';
 import { dbscan } from './dbscan';

@@ -1,6 +1,6 @@
 /**
- * Raiz da aplicação: cabeçalho e troca de páginas com transição animada.
- * AnimatePresence mantém a página antiga na tela até a animação de saída terminar.
+ * App root: header and page switching with a short cross-fade.
+ * AnimatePresence keeps the old page on screen until its exit finishes.
  */
 import { AnimatePresence, motion } from 'framer-motion';
 import { findAlgorithm } from './algorithms';
@@ -16,11 +16,9 @@ export function App() {
     <>
       <header className="topbar">
         <div className="wrap">
-          <a className="brand" href={linkTo('')}><i />AI VISUALIZER</a>
+          <a className="brand" href={linkTo('')}>AI Visualizer</a>
           <nav>
-            <a href={linkTo('')}>Início</a>
-            <a href={linkTo('')} onClick={() => setTimeout(() => document.getElementById('algoritmos')?.scrollIntoView({ behavior: 'smooth' }), 350)}>Algoritmos</a>
-            <a href="https://github.com/tassid/ai-visualizer">GitHub</a>
+            <a href="https://github.com/tassid/ai-visualizer">Source</a>
           </nav>
         </div>
       </header>
@@ -28,10 +26,10 @@ export function App() {
         <motion.main
           key={algo ? algo.id : 'home'}
           className="wrap page"
-          initial={{ opacity: 0, y: 16 }}
-          animate={{ opacity: 1, y: 0 }}
-          exit={{ opacity: 0, y: -12 }}
-          transition={{ duration: 0.25, ease: 'easeOut' }}
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          transition={{ duration: 0.2, ease: [0.22, 1, 0.36, 1] }}
           onAnimationStart={() => window.scrollTo({ top: 0 })}
         >
           {algo ? <AlgorithmPage def={algo} /> : <Home />}

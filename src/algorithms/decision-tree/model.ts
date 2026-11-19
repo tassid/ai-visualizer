@@ -1,9 +1,9 @@
 /**
- * Árvore de decisão (CART com Gini), construída em largura (BFS).
+ * Decision tree (CART with Gini), built breadth first.
  *
- * A versão recursiva clássica constrói um ramo inteiro antes do outro. Aqui
- * usamos uma fila para que a animação mostre a árvore crescendo nível por
- * nível, o que é mais fácil de acompanhar.
+ * The usual recursive version builds a whole branch before the other one.
+ * Here a queue makes the animation grow the tree level by level, which is
+ * easier to follow.
  */
 import type { Point, StepInfo, Trainer } from '../../core/types';
 import { applySplit, bestSplit, makeNode, type TreeNode } from '../shared/tree';
@@ -22,32 +22,32 @@ export interface TreeState {
 
 export function* train(data: Point[], P: TreeParams, s: TreeState): Generator<StepInfo, StepInfo> {
   while (s.queue.length) {
-    const node = s.queue.shift()!;                                      // linha 1
+    const node = s.queue.shift()!;                                      // line 1
     s.current = node;
     const pure = node.prob === 0 || node.prob === 1;
-    if (pure || node.depth >= P.depth || node.n < P.minSplit) {         // linha 2
+    if (pure || node.depth >= P.depth || node.n < P.minSplit) {         // line 2
       node.leaf = true;
       s.leaves++;
-      const why = pure ? 'é puro' : node.depth >= P.depth ? 'atingiu a profundidade máxima' : 'tem poucas amostras';
-      yield { line: 3, message: `Nó com ${node.n} pontos ${why}: vira folha (P(B) = ${node.prob.toFixed(2)}).` };
+      const why = pure ? 'is pure' : node.depth >= P.depth ? 'is at the maximum depth' : 'has too few points';
+      yield { line: 3, message: `A node with ${node.n} points ${why}, so it becomes a leaf (P(B) = ${node.prob.toFixed(2)}).` };
       continue;
     }
-    const split = bestSplit(data, node.idx, [0, 1]);                    // linhas 4 a 6
+    const split = bestSplit(data, node.idx, [0, 1]);                    // lines 4 to 6
     if (!split) {
       node.leaf = true;
       s.leaves++;
-      yield { line: 3, message: 'Nenhum corte reduz a impureza: vira folha.' };
+      yield { line: 3, message: 'No split lowers the impurity, so the node becomes a leaf.' };
       continue;
     }
-    const [l, r] = applySplit(data, node, split);                       // linha 7
-    s.queue.push(l, r);                                                 // linha 8
+    const [l, r] = applySplit(data, node, split);                       // line 7
+    s.queue.push(l, r);                                                 // line 8
     yield {
       line: 7,
-      message: `Corte ${split.feature === 0 ? 'x' : 'y'} < ${split.threshold.toFixed(2)}: Gini cai ${split.gain.toFixed(3)} (${l.n} à esquerda, ${r.n} à direita).`,
+      message: `Split on ${split.feature === 0 ? 'x' : 'y'} < ${split.threshold.toFixed(2)}: Gini drops by ${split.gain.toFixed(3)} (${l.n} left, ${r.n} right).`,
     };
   }
   s.current = null;
-  return { line: 0, message: `Árvore completa com ${s.leaves} folhas.` };
+  return { line: 0, message: `Tree complete with ${s.leaves} leaves.` };
 }
 
 export function createTree(data: Point[], P: TreeParams): Trainer<TreeState> {

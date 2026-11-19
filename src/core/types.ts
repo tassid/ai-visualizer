@@ -1,15 +1,15 @@
 /**
- * Tipos centrais do projeto.
+ * Core types.
  *
- * A ideia principal: cada algoritmo é escrito como um *generator* de JavaScript
- * (function*). Cada `yield` é um passo da animação. Isso deixa o código do
- * algoritmo parecido com o pseudocódigo de um livro, e o motor de animação só
- * precisa chamar `.next()` no ritmo escolhido pelo usuário.
+ * The central idea: every algorithm is a JavaScript generator (function*).
+ * Each `yield` is one step of the animation. The algorithm reads like
+ * textbook pseudocode, and the animation engine only has to call `.next()`
+ * at the pace the user picks.
  */
 import type { ComponentType } from 'react';
 import type { DatasetId } from './datasets';
 
-/** Um exemplo no plano. `c` é a classe (0 ou 1); em regressão e agrupamento é ignorada. */
+/** One example on the plane. `c` is the class (0 or 1); ignored in regression and clustering. */
 export interface Point {
   x: number;
   y: number;
@@ -25,33 +25,32 @@ export type ParamSpec =
   | { key: string; label: string; type: 'range'; min: number; max: number; step: number; value: number; help?: string }
   | { key: string; label: string; type: 'select'; options: ParamValue[]; value: ParamValue; help?: string };
 
-/**
- * O que cada passo informa para a interface.
- * `line` é o índice da linha do pseudocódigo que deve ficar destacada.
- */
+/** What each step reports. `line` is the pseudocode line to highlight. */
 export interface StepInfo {
   line: number;
   message: string;
 }
 
-/** Um treinador: o estado mutável do modelo e o generator que o modifica. */
+/** A trainer: the mutable model state and the generator that changes it. */
 export interface Trainer<S> {
   state: S;
   steps: Generator<StepInfo, StepInfo | void, void>;
 }
 
-/** Props recebidas pelos componentes visuais de cada algoritmo. */
+export type Hover = { x: number; y: number } | null;
+
+/** Props every algorithm visual receives. */
 export interface VisualProps<S> {
   state: S;
   data: Point[];
   params: Params;
   step: StepInfo | null;
-  /** Posição do mouse em coordenadas do mundo ([-1, 1]), ou null. */
-  hover: { x: number; y: number } | null;
+  /** Mouse position in world coordinates ([-1, 1]), or null. */
+  hover: Hover;
   done: boolean;
-  /** Incrementa a cada quadro em que o estado mudou. Útil como dependência de memo. */
+  /** Increments every frame in which the state changed. Use it as a memo key. */
   version: number;
-  /** Miniatura (cards da página inicial): desliga detalhes caros. */
+  /** Thumbnail mode: no handles, no per-step highlights. */
   compact?: boolean;
 }
 
@@ -65,9 +64,8 @@ export interface AlgorithmDocs {
   steps: string[];
   complexity: [string, string][];
   complexityNote?: string;
-  /** Linhas do pseudocódigo; os índices correspondem a StepInfo.line. */
+  /** Pseudocode lines; indices match StepInfo.line. */
   pseudocode: string[];
-  /** Ideias de exercícios para quem está estudando. */
   exercises: string[];
 }
 
@@ -75,12 +73,10 @@ export interface AlgorithmDef<S = any> {
   id: string;
   name: string;
   group: string;
-  tag: string;
   kind: Kind;
-  summary: string;
   datasets: DatasetId[];
   defaultDataset: DatasetId;
-  /** Índice em SPEEDS (engine/speeds.ts). */
+  /** Index into SPEEDS (engine/speeds.ts). */
   defaultSpeed: number;
   params: ParamSpec[];
   create(data: Point[], params: Params): Trainer<S>;
@@ -88,8 +84,11 @@ export interface AlgorithmDef<S = any> {
   aux?: { title: string; Component: ComponentType<VisualProps<S>> };
   metrics(state: S, data: Point[], params: Params): Metric[];
   history?: { label: string; get(state: S): number[] };
+  /** The model's key formula, filled with live numbers (TeX). */
+  equation?(state: S, data: Point[], params: Params, hover: Hover): string | null;
+  /** What can be dragged or hovered, beyond adding points. */
   hint?: string;
-  /** Quantos passos rodar para gerar a miniatura da página inicial. */
+  /** Steps to run when drawing the home page thumbnail. */
   thumbnailSteps?: number;
   docs: AlgorithmDocs;
 }
