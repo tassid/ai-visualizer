@@ -1,3 +1,4 @@
+import { theory } from './theory';
 import { binaryColor, classColor, COLORS } from '../../core/colors';
 import { accuracy, fmt, pct, sigmoid, tex, texTerm } from '../../core/math';
 import type { AlgorithmDef, VisualProps } from '../../core/types';
@@ -54,6 +55,7 @@ export const perceptron: AlgorithmDef<PerceptronState> = {
     { label: 'b', value: fmt(s.b, 2) },
   ],
   docs: {
+    ...theory,
     description:
       'The perceptron, proposed by Frank Rosenblatt in 1958, is the simplest artificial neuron. It takes a weighted sum of its inputs, $f(\\mathbf{x}) = \\mathbf{w}\\cdot\\mathbf{x} + b$, and picks the class from the sign. Each time it gets a point wrong, it nudges the line toward the right side of that point. The yellow arrow is $\\mathbf{w}$, which is always perpendicular to the line. If the data is linearly separable, the convergence theorem guarantees it finds a separating line. On XOR it never converges, and that limitation, pointed out by Minsky and Papert in 1969, is what led to networks with hidden layers.',
     steps: [

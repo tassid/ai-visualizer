@@ -1,3 +1,4 @@
+import { theory } from './theory';
 import { scaleLinear } from 'd3-scale';
 import { line } from 'd3-shape';
 import { motion } from 'framer-motion';
@@ -97,7 +98,7 @@ function VarianceCurve({ state: s }: VisualProps<PcaState>) {
 export const pca: AlgorithmDef<PcaState> = {
   id: 'pca',
   name: 'Principal component analysis',
-  group: 'Unsupervised',
+  group: 'Dimensionality reduction and maps',
   kind: 'reduction',
   datasets: ['elongated', 'clusters', 'blobs'],
   defaultDataset: 'elongated',
@@ -124,6 +125,7 @@ export const pca: AlgorithmDef<PcaState> = {
     { label: 'Explained by PC1', value: pct(s.l1 / (s.l1 + s.l2 || 1)) },
   ],
   docs: {
+    ...theory,
     description:
       'Principal component analysis finds the directions in which the data varies most. The animation turns a line through the mean and projects every point onto it: the spread of the projections is the variance in that direction, and the chart below records it for every angle. The direction of largest variance is the first principal component (yellow), and the second (teal) is perpendicular to it, each drawn two standard deviations long. In practice PCA gets there in one shot from the eigenvectors of the covariance matrix $\\Sigma$. It is used to reduce dimensions, compress data and plot datasets with many features.',
     steps: [

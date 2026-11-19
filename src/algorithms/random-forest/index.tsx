@@ -1,3 +1,4 @@
+import { theory } from './theory';
 import { binaryColor, classColor, COLORS } from '../../core/colors';
 import { accuracy, pct, tex } from '../../core/math';
 import type { AlgorithmDef, VisualProps } from '../../core/types';
@@ -22,7 +23,7 @@ function ForestVisual({ state: s, data, version, hover, compact }: VisualProps<F
 export const randomForest: AlgorithmDef<ForestState> = {
   id: 'random-forest',
   name: 'Random forest',
-  group: 'Instance and tree methods',
+  group: 'Neighbors, trees and ensembles',
   kind: 'classification',
   datasets: ['moons', 'circles', 'xor', 'spiral', 'blobs'],
   defaultDataset: 'moons',
@@ -50,6 +51,7 @@ export const randomForest: AlgorithmDef<ForestState> = {
     { label: 'Nodes in the last tree', value: s.trees.length ? countNodes(s.trees[s.trees.length - 1]) : 0 },
   ],
   docs: {
+    ...theory,
     description:
       'A random forest averages many decision trees. Each tree trains on a bootstrap sample (drawn with replacement) and each split may only use one randomly chosen feature. The trees make different mistakes, and averaging them lowers the variance, so the boundary is smoother and steadier than a single tree’s. The yellow lines are the splits of the newest tree, and the small points were left out of its sample. The out-of-bag error, charted on the side, estimates the test error without holding out any data.',
     steps: [

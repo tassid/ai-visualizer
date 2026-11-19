@@ -1,3 +1,4 @@
+import { theory } from './theory';
 import { motion } from 'framer-motion';
 import { binaryColor, classColor, COLORS } from '../../core/colors';
 import { accuracy, fmt, pct, tex } from '../../core/math';
@@ -49,7 +50,7 @@ function NaiveBayesVisual({ state: s, data, version, hover, compact }: VisualPro
 export const naiveBayes: AlgorithmDef<NaiveBayesState> = {
   id: 'naive-bayes',
   name: 'Gaussian naive Bayes',
-  group: 'Linear and probabilistic models',
+  group: 'Linear, probabilistic and kernel models',
   kind: 'classification',
   datasets: ['blobs', 'circles', 'linear', 'moons'],
   defaultDataset: 'blobs',
@@ -72,6 +73,7 @@ export const naiveBayes: AlgorithmDef<NaiveBayesState> = {
     { label: 'Accuracy', value: pct(accuracy(data, (x, y) => posterior(s, x, y))) },
   ],
   docs: {
+    ...theory,
     description:
       'Naive Bayes applies Bayes’ theorem under the assumption that features are independent within each class. In the Gaussian version, each class is described by one mean and one variance per feature, drawn here as 1σ and 2σ ellipses aligned with the axes. The animation estimates these numbers one point at a time with Welford’s algorithm, and the background shows the posterior probability of class B. Because the two classes can have different variances, the boundary is quadratic: on the circles it closes into a loop.',
     steps: [

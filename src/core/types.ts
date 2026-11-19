@@ -16,7 +16,7 @@ export interface Point {
   c: number;
 }
 
-export type Kind = 'classification' | 'regression' | 'clustering' | 'reduction';
+export type Kind = 'classification' | 'regression' | 'clustering' | 'reduction' | 'reinforcement' | 'optimization';
 
 export type ParamValue = number | string;
 export type Params = Record<string, ParamValue>;
@@ -67,6 +67,15 @@ export interface AlgorithmDocs {
   /** Pseudocode lines; indices match StepInfo.line. */
   pseudocode: string[];
   exercises: string[];
+  /** Textbook-style explanation. Paragraphs; inline math in $...$, display math in $$...$$. */
+  theory: string[];
+  /** Books chapters and original papers. */
+  references: Reference[];
+}
+
+export interface Reference {
+  text: string;
+  url?: string;
 }
 
 export interface AlgorithmDef<S = any> {
@@ -88,6 +97,8 @@ export interface AlgorithmDef<S = any> {
   equation?(state: S, data: Point[], params: Params, hover: Hover): string | null;
   /** What can be dragged or hovered, beyond adding points. */
   hint?: string;
+  /** The algorithm builds its own world and ignores the dataset (Q-learning, optimizers). */
+  noData?: boolean;
   /** Steps to run when drawing the home page thumbnail. */
   thumbnailSteps?: number;
   docs: AlgorithmDocs;

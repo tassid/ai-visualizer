@@ -14,6 +14,8 @@ export interface EditApi {
   /** Class given to new points; null for unlabeled data. */
   brush: number | null;
   onHover(p: { x: number; y: number } | null): void;
+  /** False for algorithms without data: the plot then only reports hover. */
+  editable: boolean;
   /** Redraw after a handle changed the model state. */
   touch(): void;
 }

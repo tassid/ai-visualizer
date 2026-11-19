@@ -54,11 +54,16 @@ export function Plot({ heatmap, children }: { heatmap?: HeatmapSpec | null; chil
   const ref = useRef<SVGSVGElement>(null);
   return (
     <PlotContext.Provider value={scales}>
-      <div className={'plot' + (edit ? ' editable' : '')}>
+      <div className={'plot' + (edit?.editable ? ' editable' : '')}>
         {heatmap && <Heatmap {...heatmap} />}
-        <svg ref={ref} viewBox={`0 0 ${PLOT_SIZE} ${PLOT_SIZE}`} onPointerLeave={() => edit?.onHover(null)}>
+        <svg
+          ref={ref}
+          viewBox={`0 0 ${PLOT_SIZE} ${PLOT_SIZE}`}
+          onPointerMove={edit ? (e) => edit.onHover(toWorld(ref.current!, e)) : undefined}
+          onPointerLeave={() => edit?.onHover(null)}
+        >
           <NumberPlane animate={!!edit} />
-          {edit && <EditLayer svg={ref} />}
+          {edit?.editable && <EditLayer svg={ref} />}
           {children}
         </svg>
       </div>
@@ -143,7 +148,6 @@ function EditLayer({ svg }: { svg: React.RefObject<SVGSVGElement | null> }) {
       }}
       onPointerMove={(e) => {
         const p = toWorld(svg.current!, e);
-        edit.onHover(p);
         const i = dragging.current;
         if (i === null || !data.current[i]) return;
         const next = data.current.slice();

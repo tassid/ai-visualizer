@@ -70,7 +70,9 @@ describe('nearest centroid', () => {
 
 Use `Plot`, `Points`, `Ring`, `Handle` and the other marks in `components/plot/`. `logistic-regression/index.tsx` is a short model to copy. A `Handle` makes any part of the state draggable: give it a position and an `onDrag` that writes into the state.
 
-Fill in `equation` with the formula in TeX and `docs` with the description, steps, complexity, pseudocode and exercises. Inline math in the text goes between `$...$`.
+Fill in `equation` with the formula in TeX and `docs` with the description, steps, complexity, pseudocode, exercises, `theory` (paragraphs) and `references` (use the helpers in `algorithms/books.ts`). Inline math goes between `$...$`, display math between `$$...$$`.
+
+If the algorithm builds its own world and ignores the dataset (like Q-learning), set `noData: true`.
 
 ## 5. Register it
 

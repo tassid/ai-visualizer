@@ -1,3 +1,4 @@
+import { theory } from './theory';
 import { AnimatePresence, motion } from 'framer-motion';
 import { CLUSTER_PALETTE, COLORS } from '../../core/colors';
 import type { AlgorithmDef, VisualProps } from '../../core/types';
@@ -39,7 +40,7 @@ function DbscanVisual({ state: s, data, params, hover, compact }: VisualProps<Db
 export const dbscan: AlgorithmDef<DbscanState> = {
   id: 'dbscan',
   name: 'DBSCAN',
-  group: 'Unsupervised',
+  group: 'Clustering',
   kind: 'clustering',
   datasets: ['moons', 'circles', 'clusters', 'spiral'],
   defaultDataset: 'moons',
@@ -72,6 +73,7 @@ export const dbscan: AlgorithmDef<DbscanState> = {
     ];
   },
   docs: {
+    ...theory,
     description:
       'DBSCAN groups points by density. A point is a core point (drawn larger) if at least minPts points lie within radius $\\varepsilon$. Clusters grow by linking neighboring core points, like a breadth-first search: the points waiting in the queue have yellow rings. Points that belong to no dense region stay as noise, in dark grey. Unlike k-means, you do not choose the number of clusters, and it finds arbitrary shapes such as the moons. The dashed circle is the $\\varepsilon$-ball of the point being examined.',
     steps: [

@@ -1,3 +1,4 @@
+import { theory } from './theory';
 import { motion } from 'framer-motion';
 import { binaryColor, classColor, COLORS } from '../../core/colors';
 import { accuracy, pct, tex } from '../../core/math';
@@ -59,7 +60,7 @@ function TreeAux({ state: s, hover }: VisualProps<TreeState>) {
 export const decisionTree: AlgorithmDef<TreeState> = {
   id: 'decision-tree',
   name: 'Decision tree',
-  group: 'Instance and tree methods',
+  group: 'Neighbors, trees and ensembles',
   kind: 'classification',
   datasets: ['moons', 'xor', 'circles', 'spiral', 'blobs'],
   defaultDataset: 'moons',
@@ -88,6 +89,7 @@ export const decisionTree: AlgorithmDef<TreeState> = {
     { label: 'Training accuracy', value: pct(accuracy(data, (x, y) => predictTree(s.root, x, y))) },
   ],
   docs: {
+    ...theory,
     description:
       'A decision tree cuts the plane recursively with axis-aligned splits. At each node it tries every possible split on every feature and keeps the one that lowers the Gini impurity the most. The animation builds the tree level by level: each step decides one node (outlined in yellow), either splitting it or turning it into a leaf. Dashed boxes are still waiting. Deep trees memorize the data, as the training accuracy reaching 100% shows; shallow trees generalize better.',
     steps: [

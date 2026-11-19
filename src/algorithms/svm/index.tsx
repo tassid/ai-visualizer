@@ -1,3 +1,4 @@
+import { theory } from './theory';
 import { AnimatePresence, motion } from 'framer-motion';
 import { binaryColor, classColor, COLORS } from '../../core/colors';
 import { accuracy, fmt, pct, sigmoid, tex } from '../../core/math';
@@ -38,7 +39,7 @@ function SvmVisual({ state: s, data, version, compact }: VisualProps<SvmState>) 
 export const svm: AlgorithmDef<SvmState> = {
   id: 'svm',
   name: 'Linear SVM',
-  group: 'Linear and probabilistic models',
+  group: 'Linear, probabilistic and kernel models',
   kind: 'classification',
   datasets: ['blobs', 'linear', 'moons'],
   defaultDataset: 'blobs',
@@ -63,6 +64,7 @@ export const svm: AlgorithmDef<SvmState> = {
     { label: 'Accuracy', value: pct(accuracy(data, (x, y) => (decision(s, x, y) >= 0 ? 1 : 0))) },
   ],
   docs: {
+    ...theory,
     description:
       'A support vector machine looks for the line that separates the classes with the widest possible margin. Only the points on or inside the margin, the support vectors (ringed in white), shape the solution: delete every other point and the line stays put. This is a linear SVM trained by subgradient descent on the hinge loss with an L2 penalty. $\\lambda$ trades a wide margin against classifying every point. For curved boundaries, real SVMs use the kernel trick, which computes inner products in a higher dimensional space without building it.',
     steps: [

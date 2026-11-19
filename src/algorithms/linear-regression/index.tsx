@@ -1,3 +1,4 @@
+import { theory } from './theory';
 import { line } from 'd3-shape';
 import { motion } from 'framer-motion';
 import { useCallback } from 'react';
@@ -82,7 +83,7 @@ function LinRegLandscape({ state: s, data, params }: VisualProps<LinRegState>) {
 export const linearRegression: AlgorithmDef<LinRegState> = {
   id: 'linear-regression',
   name: 'Linear regression',
-  group: 'Linear and probabilistic models',
+  group: 'Linear, probabilistic and kernel models',
   kind: 'regression',
   datasets: ['line', 'sine'],
   defaultDataset: 'line',
@@ -108,6 +109,7 @@ export const linearRegression: AlgorithmDef<LinRegState> = {
     { label: 'Mean squared error', value: fmt(s.loss, 5) },
   ],
   docs: {
+    ...theory,
     description:
       'Linear regression fits the line (or, with a higher degree, the polynomial) that minimizes the mean squared error between predictions and targets. Each red square has the residual as its side, so its area is the squared error; the loss is the average area. Here the fit runs by gradient descent: each iteration moves the coefficients a little in the direction that shrinks the error fastest. With degree 1, the panel below shows the loss over $w$ and $b$ as contour lines, with the path gradient descent walks to the bottom of the valley.',
     steps: [

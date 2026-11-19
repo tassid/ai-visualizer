@@ -1,3 +1,4 @@
+import { theory } from './theory';
 import { useMemo } from 'react';
 import { binaryColor, classColor, COLORS } from '../../core/colors';
 import { accuracy, fmt, pct, tex } from '../../core/math';
@@ -75,6 +76,7 @@ export const mlp: AlgorithmDef<MlpState> = {
     { label: 'Parameters', value: s.net.parameterCount },
   ],
   docs: {
+    ...theory,
     description:
       'A multilayer perceptron stacks layers of neurons with nonlinear activations. Each hidden layer reshapes the input space, and composing those reshapings lets the network draw curved boundaries, which solves XOR, circles and spirals. Training uses backpropagation: the output error travels backward through the layers by the chain rule, which gives the gradient of every weight, and an optimizer adjusts them. In the panel under the plot, each square shows how one neuron responds across the whole plane. Edges are blue for positive weights and red for negative ones, thicker when larger.',
     steps: [

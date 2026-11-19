@@ -10,25 +10,38 @@ Every algorithm is written from scratch in TypeScript, with no ML library, and m
 
 1. Play, pause, or step through single updates. The pseudocode highlights the line that just ran, and the model's formula updates with live numbers.
 2. Edit the data: click to add a point, drag to move one, shift-click to delete. A trained model retrains immediately, so the boundary follows your hand.
-3. Move the model itself: drag the line of a perceptron, logistic regression or SVM, fit a regression line by hand, place k-means centroids, turn the PCA axis.
+3. Move the model itself: drag the line of a perceptron, logistic regression or SVM, fit a regression line by hand, place k-means centroids or mixture components, turn the PCA axis, pick the optimizers' starting point, build walls in the Q-learning world.
 4. Probe it: hover the plane to send a point through the neural network, trace its path down the decision tree, count the forest's votes, or see the k nearest neighbors.
 
 ## Algorithms
+
+23 algorithms, each with an animation, a live formula, pseudocode, a textbook-style theory section with derivations, exercises and a reading list (chapters of ISLR, ESL, Bishop, Goodfellow, Rasmussen and Williams, Sutton and Barto, and the original papers).
 
 | Group | Algorithm | What the animation shows |
 | --- | --- | --- |
 | Neural networks | Perceptron | The line correcting itself on each mistake, with the weight vector |
 | Neural networks | Multilayer perceptron | The boundary, and every neuron's activation map |
-| Linear and probabilistic | Linear regression | Squared errors as squares, polynomial fits, loss landscape with contours |
-| Linear and probabilistic | Logistic regression | Probability, boundary, and the p = 0.25 and 0.75 lines |
-| Linear and probabilistic | Linear SVM | Margin, support vectors, hinge loss |
-| Linear and probabilistic | Gaussian naive Bayes | Class ellipses estimated point by point (Welford) |
-| Instance and tree | k-nearest neighbors | A sweep of the plane with neighbors and radius |
-| Instance and tree | Decision tree | Gini splits level by level, and the tree itself |
-| Instance and tree | Random forest | Bootstrap samples, averaged trees, out-of-bag error |
-| Unsupervised | k-means | Assignment, centroids gliding, Voronoi regions |
-| Unsupervised | DBSCAN | Core, border and noise points, the expansion queue |
-| Unsupervised | PCA | A turning line, projections, variance by angle |
+| Linear, probabilistic, kernel | Linear regression | Squared errors as squares, polynomial fits, loss landscape |
+| Linear, probabilistic, kernel | Logistic regression | Probability, boundary, the p = 0.25 and 0.75 lines |
+| Linear, probabilistic, kernel | LDA and QDA | Full covariance ellipses, linear or quadratic boundary |
+| Linear, probabilistic, kernel | Gaussian naive Bayes | Axis-aligned class ellipses estimated point by point |
+| Linear, probabilistic, kernel | Linear SVM | Margin, support vectors, hinge loss |
+| Linear, probabilistic, kernel | Kernel SVM | RBF bumps, margins as contour lines, support vector weights |
+| Linear, probabilistic, kernel | Gaussian process regression | Posterior mean, uncertainty band and sampled functions |
+| Neighbors, trees, ensembles | k-nearest neighbors | A sweep of the plane with neighbors and radius |
+| Neighbors, trees, ensembles | Decision tree | Gini splits level by level, and the tree itself |
+| Neighbors, trees, ensembles | Random forest | Bootstrap samples, averaged trees, out-of-bag error |
+| Neighbors, trees, ensembles | AdaBoost | Stumps voting, point weights growing on mistakes |
+| Neighbors, trees, ensembles | Gradient boosting | Trees fit to residuals, residuals shrinking |
+| Clustering | k-means | Assignment, centroids gliding, Voronoi regions |
+| Clustering | Gaussian mixture (EM) | Soft responsibilities, ellipses, rising log-likelihood |
+| Clustering | Hierarchical clustering | Merges with four linkages and a growing dendrogram |
+| Clustering | DBSCAN | Core, border and noise points, the expansion queue |
+| Clustering | Mean shift | Every point climbing the density to its peak |
+| Dimensionality reduction | PCA | A turning line, projections, variance by angle |
+| Dimensionality reduction | Self-organizing map | A neuron grid unfolding over the data |
+| Reinforcement learning | Q-learning | A grid world, learned values and the greedy policy |
+| Optimization | SGD, Momentum, RMSProp, Adam | Four optimizers racing on contour maps |
 
 ## Stack
 
@@ -56,9 +69,11 @@ src/
 │   ├── charts/            LineChart, TreeDiagram, NetworkDiagram, LossLandscape
 │   └── ui/                controls, pseudocode, live equation, KaTeX
 ├── algorithms/
+│   ├── books.ts           the references shared by the theory sections
 │   ├── perceptron/
 │   │   ├── model.ts       the algorithm, as a generator
 │   │   ├── model.test.ts  tests of its mathematical properties
+│   │   ├── theory.ts      textbook-style explanation and reading list
 │   │   └── index.tsx      what to draw, parameters, formula, text, pseudocode
 │   ├── mlp/               + network.ts (from scratch) and optimizers.ts (SGD, Momentum, Adam)
 │   ├── shared/tree.ts     Gini, best split, prediction (used by tree and forest)

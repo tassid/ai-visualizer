@@ -10,12 +10,16 @@ export function Tex({ children, display = false }: { children: string; display?:
   return <span className={display ? 'tex tex-display' : 'tex'} dangerouslySetInnerHTML={{ __html: html }} />;
 }
 
-/** Text with inline math between $...$. */
+/** Text with inline math between $...$ and display math between $$...$$. */
 export function Prose({ text }: { text: string }) {
-  const parts = text.split(/(\$[^$]+\$)/g);
+  const parts = text.split(/(\$\$[^$]+\$\$|\$[^$]+\$)/g);
   return (
     <>
-      {parts.map((p, i) => (p.startsWith('$') && p.endsWith('$') ? <Tex key={i}>{p.slice(1, -1)}</Tex> : <span key={i}>{p}</span>))}
+      {parts.map((p, i) => {
+        if (p.startsWith('$$') && p.endsWith('$$')) return <Tex key={i} display>{p.slice(2, -2)}</Tex>;
+        if (p.startsWith('$') && p.endsWith('$')) return <Tex key={i}>{p.slice(1, -1)}</Tex>;
+        return <span key={i}>{p}</span>;
+      })}
     </>
   );
 }

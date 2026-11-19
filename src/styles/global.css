@@ -134,6 +134,9 @@ ol li + li { margin-top: 6px; }
 table.cx { width: 100%; border-collapse: collapse; }
 table.cx td { padding: 8px 0; border-bottom: 1px solid var(--hair); }
 table.cx td:last-child { text-align: right; }
+.theory p { max-width: none; }
+.theory .katex-display { margin: 12px 0; overflow-x: auto; overflow-y: hidden; }
+ol.refs { font-size: 15px; color: #c8c8c8; }
 .small { font-size: 15px; color: var(--muted); margin: 12px 0 0; }
 
 .pseudo { background: var(--surface); border-radius: 8px; padding: 12px 0; font-size: 13px; line-height: 1.75; overflow-x: auto; margin: 0; }
@@ -147,3 +150,4 @@ table.cx td:last-child { text-align: right; }
   .layout, .info, .hero { grid-template-columns: 1fr; }
   h1, .hero h1 { font-size: 32px; }
 }
+.grid-label { fill: #000; font-family: var(--serif); font-size: 20px; pointer-events: none; }

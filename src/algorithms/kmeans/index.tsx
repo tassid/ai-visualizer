@@ -1,3 +1,4 @@
+import { theory } from './theory';
 import { motion } from 'framer-motion';
 import { line } from 'd3-shape';
 import { CLUSTER_PALETTE, COLORS, hexToRgb } from '../../core/colors';
@@ -54,7 +55,7 @@ function KMeansVisual({ state: s, data, version, compact }: VisualProps<KMeansSt
 export const kmeans: AlgorithmDef<KMeansState> = {
   id: 'kmeans',
   name: 'k-means',
-  group: 'Unsupervised',
+  group: 'Clustering',
   kind: 'clustering',
   datasets: ['clusters', 'blobs', 'moons', 'circles'],
   defaultDataset: 'clusters',
@@ -80,6 +81,7 @@ export const kmeans: AlgorithmDef<KMeansState> = {
     { label: 'Inertia', value: fmt(s.inertia, 3) },
   ],
   docs: {
+    ...theory,
     description:
       'k-means splits the data into $k$ clusters by alternating two steps: assign each point to its nearest centroid, then move each centroid to the mean of its points. The tinted background shows the Voronoi regions, the area closest to each centroid. Neither step can increase the inertia $J$, so the algorithm always converges, though it can stop in a local minimum. k-means++ spreads out the starting centroids and usually does better. Try the moons and the circles to see where it fails: k-means assumes round clusters of similar size.',
     steps: [

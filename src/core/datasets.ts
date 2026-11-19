@@ -11,7 +11,7 @@ import type { Point } from './types';
 
 export type DatasetId =
   | 'linear' | 'blobs' | 'xor' | 'circles' | 'moons' | 'spiral'
-  | 'clusters' | 'elongated' | 'line' | 'sine';
+  | 'clusters' | 'elongated' | 'line' | 'sine' | 'tilted' | 'few';
 
 export interface Dataset {
   id: DatasetId;
@@ -127,6 +127,29 @@ export const DATASETS: Record<DatasetId, Dataset> = {
       return Array.from({ length: 40 }, () => {
         const x = uniform(-0.9, 0.9);
         return { x, y: keep(a * x + b + randn() * 0.12), c: 0 };
+      });
+    },
+  },
+  tilted: {
+    id: 'tilted',
+    name: 'Tilted classes',
+    generate() {
+      // Two elongated classes with the same tilt: the features are correlated within each class.
+      const th = 0.6;
+      return Array.from({ length: 160 }, (_, i) => {
+        const c = i % 2, u = randn() * 0.4, v = randn() * 0.09;
+        const cx = c ? 0.12 : -0.12, cy = c ? -0.16 : 0.16;
+        return { x: keep(cx + u * Math.cos(th) - v * Math.sin(th)), y: keep(cy + u * Math.sin(th) + v * Math.cos(th)), c };
+      });
+    },
+  },
+  few: {
+    id: 'few',
+    name: 'Few samples of a curve',
+    generate() {
+      return Array.from({ length: 10 }, () => {
+        const x = uniform(-0.9, 0.9);
+        return { x, y: keep(0.55 * Math.sin(3 * x) + 0.15 * x + randn() * 0.04), c: 0 };
       });
     },
   },

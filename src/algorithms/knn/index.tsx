@@ -1,3 +1,4 @@
+import { theory } from './theory';
 import { motion } from 'framer-motion';
 import { binaryColor, classColor, COLORS } from '../../core/colors';
 import { pct } from '../../core/math';
@@ -48,7 +49,7 @@ function KnnVisual({ state: s, data, params, hover, compact }: VisualProps<KnnSt
 export const knn: AlgorithmDef<KnnState> = {
   id: 'knn',
   name: 'k-nearest neighbors',
-  group: 'Instance and tree methods',
+  group: 'Neighbors, trees and ensembles',
   kind: 'classification',
   datasets: ['moons', 'circles', 'xor', 'spiral', 'blobs'],
   defaultDataset: 'moons',
@@ -75,6 +76,7 @@ export const knn: AlgorithmDef<KnnState> = {
     { label: 'Stored points', value: data.length },
   ],
   docs: {
+    ...theory,
     description:
       'KNN has no training phase: it just stores the data. To classify a new point, it measures the distance to every example, takes the $k$ closest and lets them vote. The animation sweeps the plane cell by cell, showing the neighbors behind each decision and the radius that contains them. A small $k$ makes jagged boundaries that memorize the noise; a large $k$ smooths too much. Leave-one-out accuracy classifies each point using all the others, an honest way to measure error.',
     steps: [

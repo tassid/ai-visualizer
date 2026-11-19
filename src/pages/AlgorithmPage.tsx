@@ -18,7 +18,7 @@ const folderOf = (id: string) => FOLDERS[id] ?? id;
 
 export function AlgorithmPage({ def }: { def: AlgorithmDef }) {
   const [datasetId, setDatasetId] = useState<DatasetId>(def.defaultDataset);
-  const [data, setData] = useState<Point[]>(() => DATASETS[def.defaultDataset].generate());
+  const [data, setData] = useState<Point[]>(() => (def.noData ? [] : DATASETS[def.defaultDataset].generate()));
   const [params, setParams] = useState<Params>(() => defaultParams(def.params));
   const [brush, setBrush] = useState(1);
   const [hover, setHover] = useState<Hover>(null);
@@ -30,7 +30,7 @@ export function AlgorithmPage({ def }: { def: AlgorithmDef }) {
   const regenerate = useCallback((id: DatasetId) => setData(DATASETS[id].generate()), []);
   const setParam = (key: string, v: ParamValue) => setParams((p) => ({ ...p, [key]: v }));
 
-  const edit: EditApi = { data, setData, brush: def.kind === 'classification' ? brush : null, onHover: setHover, touch: t.touch };
+  const edit: EditApi = { data, setData, brush: def.kind === 'classification' ? brush : null, onHover: setHover, touch: t.touch, editable: !def.noData };
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -59,7 +59,7 @@ export function AlgorithmPage({ def }: { def: AlgorithmDef }) {
           <Equation tex={equation} />
           <StepMessage step={t.step} done={t.done} />
           <p className="hint">
-            Click to add a point, drag to move one, shift-click to delete. {def.hint}
+            {def.noData ? '' : 'Click to add a point, drag to move one, shift-click to delete. '}{def.hint}
           </p>
           {Aux && (
             <figure className="aux">
@@ -71,14 +71,14 @@ export function AlgorithmPage({ def }: { def: AlgorithmDef }) {
 
         <aside className="side">
           <Playback t={t} />
-          <DataControls
+          {!def.noData && <DataControls
             options={def.datasets}
             value={datasetId}
             onChange={(id) => { setDatasetId(id); regenerate(id); }}
             onRegenerate={() => regenerate(datasetId)}
             onClear={() => setData([])}
             brush={def.kind === 'classification' ? { value: brush, onChange: setBrush } : undefined}
-          />
+          />}
           <ParamControls specs={def.params} values={params} onChange={setParam} />
           <Metrics metrics={metrics} />
           {def.history && (
@@ -96,6 +96,8 @@ export function AlgorithmPage({ def }: { def: AlgorithmDef }) {
           <h2>How it works</h2>
           <p><Prose text={def.docs.description} /></p>
           <ol>{def.docs.steps.map((s) => <li key={s}><Prose text={s} /></li>)}</ol>
+          <h2>Theory</h2>
+          <div className="theory">{def.docs.theory.map((p, i) => <p key={i}><Prose text={p} /></p>)}</div>
           <h2>Exercises</h2>
           <ol className="exercises">{def.docs.exercises.map((s) => <li key={s}>{s}</li>)}</ol>
         </div>
@@ -104,6 +106,10 @@ export function AlgorithmPage({ def }: { def: AlgorithmDef }) {
           <Pseudocode lines={def.docs.pseudocode} active={t.step?.line ?? null} />
           <h2>Complexity</h2>
           <ComplexityTable docs={def.docs} />
+          <h2>Further reading</h2>
+          <ol className="refs">
+            {def.docs.references.map((r) => <li key={r.text}>{r.url ? <a href={r.url}>{r.text}</a> : r.text}</li>)}
+          </ol>
           <p className="small">
             Source: <a href={`https://github.com/tassid/ai-visualizer/tree/main/src/algorithms/${folderOf(def.id)}`}>src/algorithms/{folderOf(def.id)}</a>
           </p>

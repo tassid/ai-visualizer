@@ -1,3 +1,4 @@
+import { theory } from './theory';
 import { binaryColor, classColor, COLORS } from '../../core/colors';
 import { accuracy, fmt, pct, tex, texTerm } from '../../core/math';
 import type { AlgorithmDef, VisualProps } from '../../core/types';
@@ -27,7 +28,7 @@ function LogisticVisual({ state: s, data, version, hover, compact }: VisualProps
 export const logisticRegression: AlgorithmDef<LogisticState> = {
   id: 'logistic-regression',
   name: 'Logistic regression',
-  group: 'Linear and probabilistic models',
+  group: 'Linear, probabilistic and kernel models',
   kind: 'classification',
   datasets: ['blobs', 'linear', 'moons', 'xor'],
   defaultDataset: 'blobs',
@@ -54,6 +55,7 @@ export const logisticRegression: AlgorithmDef<LogisticState> = {
     { label: 'Accuracy', value: pct(accuracy(data, (x, y) => probability(s, x, y))) },
   ],
   docs: {
+    ...theory,
     description:
       'Despite the name, logistic regression is a classifier. It passes a linear combination of the inputs through the sigmoid, $\\sigma(z) = 1/(1+e^{-z})$, which gives a probability between 0 and 1. The weights are fit by gradient descent on the cross-entropy. The boundary is the line where $p = 0.5$, and the dashed lines mark $p = 0.25$ and $p = 0.75$: the closer they are, the more confident the model. The loss is convex, so there is a single minimum and gradient descent always gets there.',
     steps: [
